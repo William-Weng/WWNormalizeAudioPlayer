@@ -65,6 +65,25 @@ public extension WWNormalizeAudioPlayer {
         stopTimer()
     }
     
+    /// 暫停播放（保留目前進度）
+    func pause() {
+        playerNode.pause()
+        audioEngine.pause()
+        stopTimer()
+    }
+    
+    /// 繼續播放（從暫停位置繼續）
+    func resume() {
+        
+        do {
+            try audioEngine.start()
+            playerNode.play()
+            startTimer()
+        } catch {
+            delegate?.audioPlayer(self, error: error)
+        }
+    }
+    
     /// 設定AVAudioSession
     /// - Parameters:
     ///   - category: AVAudioSession.Category
