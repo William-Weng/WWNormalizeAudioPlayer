@@ -152,12 +152,10 @@ extension AVAudioPlayerNode {
     /// 排定音樂檔案
     /// - Parameters:
     ///   - audioFile: 音效檔案
-    ///   - onStop: 是否停止
     ///   - when: 開始時間
     ///   - callbackType: 哪個階段發出完成訊息
     ///   - completionHandler: 完成後的處理
-    func _schedule(audioFile: AVAudioFile, onStop: Bool = false, at when: AVAudioTime? = nil, callbackType: AVAudioPlayerNodeCompletionCallbackType, completionHandler: AVAudioPlayerNodeCompletionHandler?) {
-        if (onStop) { stop() }
+    func _schedule(audioFile: AVAudioFile, at when: AVAudioTime? = nil, callbackType: AVAudioPlayerNodeCompletionCallbackType, completionHandler: AVAudioPlayerNodeCompletionHandler?) {
         scheduleFile(audioFile, at: when, completionCallbackType: callbackType, completionHandler: completionHandler)
     }
 }

@@ -41,7 +41,7 @@ public extension WWNormalizeAudioPlayer {
     /// - Parameters:
     ///   - url: 音樂檔路徑
     ///   - targetDB: 正規化目標值
-    ///   - AVAudioPlayerNodeCompletionCallbackType: 正規化目標值
+    ///   - callbackType: 回傳結束的時機
     func play(with url: URL, targetDB: Float? = -1.0, callbackType: AVAudioPlayerNodeCompletionCallbackType = .dataPlayedBack) {
         
         do {
@@ -53,7 +53,7 @@ public extension WWNormalizeAudioPlayer {
                 equalizerNode.globalGain = gain
             }
             
-            playerNode._schedule(audioFile: audioFile, onStop: true, callbackType: callbackType) { [self] type in
+            playerNode._schedule(audioFile: audioFile, callbackType: callbackType) { [self] type in
                 Task { @MainActor in delegate?.audioPlayer(self, callbackType: type, didFinishPlaying: audioFile) }
             }
             
@@ -123,9 +123,9 @@ private extension WWNormalizeAudioPlayer {
     /// - Returns: Result<Bool, Error>
     func initAudioEngine() {
         
-        audioEngine = AVAudioEngine()
-        playerNode = AVAudioPlayerNode()
-        equalizerNode = AVAudioUnitEQ(numberOfBands: 1)
+        audioEngine = .init()
+        playerNode = .init()
+        equalizerNode = .init(numberOfBands: 1)
         
         audioEngine
             ._attachNode(equalizerNode, connectTo: audioEngine.mainMixerNode)
