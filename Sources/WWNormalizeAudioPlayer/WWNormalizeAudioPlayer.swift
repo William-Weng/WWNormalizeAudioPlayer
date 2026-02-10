@@ -19,6 +19,11 @@ open class WWNormalizeAudioPlayer {
     
     public weak var delegate: Deleagte?
     
+    public var volume: Float {
+        get { playerNode.volume }
+        set { playerNode.volume = volume }
+    }
+        
     public init() { initAudioEngine() }
         
     deinit {
@@ -83,15 +88,7 @@ public extension WWNormalizeAudioPlayer {
             delegate?.audioPlayer(self, error: error)
         }
     }
-    
-    /// 調整音樂播放器音量 (0.0 ~ 1.0)
-    /// - Parameter volume: 音量
-    /// - Returns: Float
-    func volume(_ volume: Float) -> Float {
-        playerNode.volume = volume
-        return playerNode.volume
-    }
-    
+        
     /// 設定AVAudioSession
     /// - Parameters:
     ///   - category: AVAudioSession.Category
