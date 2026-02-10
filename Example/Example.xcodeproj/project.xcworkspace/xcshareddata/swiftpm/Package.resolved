@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/William-Weng/WWNormalizeAudioPlayer",
       "state" : {
-        "revision" : "baaf38ad7294ce6c7ea41874b95f48296d9fec4f",
-        "version" : "1.1.1"
+        "revision" : "44c217b64b1f6935990ee7f6e29f7ebb072082ec",
+        "version" : "1.1.2"
       }
     }
   ],

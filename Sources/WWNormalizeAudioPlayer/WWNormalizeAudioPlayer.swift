@@ -85,8 +85,11 @@ public extension WWNormalizeAudioPlayer {
     }
     
     /// 調整音樂播放器音量 (0.0 ~ 1.0)
-    func volume(_ volume: Float) {
+    /// - Parameter volume: 音量
+    /// - Returns: Float
+    func volume(_ volume: Float) -> Float {
         playerNode.volume = volume
+        return playerNode.volume
     }
     
     /// 設定AVAudioSession
