@@ -20,12 +20,14 @@ open class WWNormalizeAudioPlayer {
     public weak var delegate: Deleagte?
     
     public var volume: Float {
-        get { playerNode.volume }
-        set { playerNode.volume = volume }
+        get { audioEngine.mainMixerNode.outputVolume }
+        set { audioEngine.mainMixerNode.outputVolume = newValue }
     }
-        
+    
+    public var isHiddenProgress = false
+    
     public init() { initAudioEngine() }
-        
+    
     deinit {
         delegate = nil
         stopTimer()
@@ -55,7 +57,7 @@ public extension WWNormalizeAudioPlayer {
                 Task { @MainActor in delegate?.audioPlayer(self, callbackType: type, didFinishPlaying: audioFile) }
             }
             
-            startTimer()
+            if (!isHiddenProgress) { startTimer() }
             playerNode.play()
             
         } catch {
