@@ -11,13 +11,15 @@ import Accelerate
 // MARK: - 音量正規化聲音播放器
 open class WWNormalizeAudioPlayer {
     
-    private var audioEngine: AVAudioEngine!
-    private var playerNode: AVAudioPlayerNode!
-    private var audioFile: AVAudioFile!
-    private var equalizerNode: AVAudioUnitEQ!
-    private weak var displayLink: CADisplayLink?
-    
     public weak var delegate: Deleagte?
+
+    public private(set) var audioFile: AVAudioFile!
+    
+    private var playerNode: AVAudioPlayerNode!
+    private var audioEngine: AVAudioEngine!
+    private var equalizerNode: AVAudioUnitEQ!
+    
+    private weak var displayLink: CADisplayLink?
     
     public var volume: Float {
         get { audioEngine.mainMixerNode.outputVolume }
@@ -99,6 +101,33 @@ public extension WWNormalizeAudioPlayer {
     func setSession(category: AVAudioSession.Category, isActive: Bool = true) -> Result<Bool, Error> {
         return AVAudioSession.sharedInstance()._setCategory(category, isActive: isActive)
     }
+    
+    /// 取得當前播放時間 (秒)
+    /// - Returns: TimeInterval
+    func currentTime() -> TimeInterval {
+        
+        guard let audioFile = audioFile,
+              let nodeTime = playerNode.lastRenderTime,
+              let playerTime = playerNode.playerTime(forNodeTime: nodeTime)
+        else {
+            return -1
+        }
+        
+        let currentSeconds = Double(playerTime.sampleTime) / playerTime.sampleRate
+        return min(currentSeconds, totalTime())
+    }
+    
+    /// 取得總播放時間 (秒)
+    /// - Returns: TimeInterval
+    func totalTime() -> TimeInterval {
+        
+        guard let audioFile = audioFile else { return -1 }
+        
+        let sampleRate = audioFile.fileFormat.sampleRate
+        let length = Double(audioFile.length)
+        
+        return length / sampleRate
+    }
 }
 
 // MARK: - 小工具
@@ -159,32 +188,5 @@ private extension WWNormalizeAudioPlayer {
     func stopTimer() {
         displayLink?.invalidate()
         displayLink = nil
-    }
-    
-    /// 取得當前播放時間 (秒)
-    /// - Returns: TimeInterval
-    func currentTime() -> TimeInterval {
-        
-        guard let audioFile = audioFile,
-              let nodeTime = playerNode.lastRenderTime,
-              let playerTime = playerNode.playerTime(forNodeTime: nodeTime)
-        else {
-            return -1
-        }
-        
-        let currentSeconds = Double(playerTime.sampleTime) / playerTime.sampleRate
-        return min(currentSeconds, totalTime())
-    }
-    
-    /// 取得總播放時間 (秒)
-    /// - Returns: TimeInterval
-    func totalTime() -> TimeInterval {
-        
-        guard let audioFile = audioFile else { return -1 }
-        
-        let sampleRate = audioFile.fileFormat.sampleRate
-        let length = Double(audioFile.length)
-        
-        return length / sampleRate
     }
 }
