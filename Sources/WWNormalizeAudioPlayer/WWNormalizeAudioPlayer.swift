@@ -15,21 +15,27 @@ open class WWNormalizeAudioPlayer {
     private var playerNode: AVAudioPlayerNode!
     private var audioFile: AVAudioFile!
     private var equalizerNode: AVAudioUnitEQ!
+    private weak var displayLink: CADisplayLink?
     
     public weak var delegate: Deleagte?
     
     public init() { initAudioEngine() }
+        
+    deinit {
+        delegate = nil
+        stopTimer()
+    }
 }
 
 // MARK: - 公開函式
 public extension WWNormalizeAudioPlayer {
     
-    /// 播放音樂
+    /// [播放音樂](https://cloud.tencent.com/developer/ask/sof/111888173)
     /// - Parameters:
     ///   - url: 音樂檔路徑
     ///   - targetDB: 正規化目標值
-    ///   - completionHandler: 播放完成後的動作
-    func play(with url: URL, targetDB: Float? = -1.0) {
+    ///   - AVAudioPlayerNodeCompletionCallbackType: 正規化目標值
+    func play(with url: URL, targetDB: Float? = -1.0, callbackType: AVAudioPlayerNodeCompletionCallbackType = .dataPlayedBack) {
         
         do {
             _  = try audioEngine._start().get()
@@ -40,10 +46,11 @@ public extension WWNormalizeAudioPlayer {
                 equalizerNode.globalGain = gain
             }
             
-            playerNode._schedule(audioFile: audioFile, onStop: true) { [self] in
-                delegate?.audioPlayer(self, didFinishPlaying: audioFile)
+            playerNode._schedule(audioFile: audioFile, onStop: true, callbackType: callbackType) { [self] type in
+                Task { @MainActor in delegate?.audioPlayer(self, callbackType: type, didFinishPlaying: audioFile) }
             }
             
+            startTimer()
             playerNode.play()
             
         } catch {
@@ -53,8 +60,9 @@ public extension WWNormalizeAudioPlayer {
     
     /// 停止播放音樂
     func stop() {
-        audioEngine.stop()
         playerNode.stop()
+        audioEngine.stop()
+        stopTimer()
     }
     
     /// 設定AVAudioSession
@@ -64,6 +72,21 @@ public extension WWNormalizeAudioPlayer {
     /// - Returns: Result<Bool, Error>
     func setSession(category: AVAudioSession.Category, isActive: Bool = true) -> Result<Bool, Error> {
         return AVAudioSession.sharedInstance()._setCategory(category, isActive: isActive)
+    }
+}
+
+// MARK: - 小工具
+@objc private extension WWNormalizeAudioPlayer {
+    
+    /// 更新音樂播放時間
+    /// - Parameter displayLink: CADisplayLink
+    func updatePlayTime(_ displayLink: CADisplayLink) {
+        
+        let totalTime = totalTime()
+        let currentTime = currentTime()
+        
+        delegate?.audioPlayer(self, audioFile: audioFile, totalTime: totalTime, currentTime: currentTime)
+        if (currentTime >= totalTime) { stop() }
     }
 }
 
@@ -97,5 +120,45 @@ private extension WWNormalizeAudioPlayer {
             let normalizeGain = powf(10, (targetDB - rmsDB) / 20)
             return .success(normalizeGain)
         }
+    }
+    
+    /// 開始計時
+    func startTimer() {
+        stopTimer()
+        displayLink = CADisplayLink(target: self, selector: #selector(updatePlayTime(_:)))
+        displayLink?.add(to: .main, forMode: .common)
+    }
+        
+    /// 停止播放時停掉 CADisplayLink
+    func stopTimer() {
+        displayLink?.invalidate()
+        displayLink = nil
+    }
+    
+    /// 取得當前播放時間 (秒)
+    /// - Returns: TimeInterval
+    func currentTime() -> TimeInterval {
+        
+        guard let audioFile = audioFile,
+              let nodeTime = playerNode.lastRenderTime,
+              let playerTime = playerNode.playerTime(forNodeTime: nodeTime)
+        else {
+            return -1
+        }
+        
+        let currentSeconds = Double(playerTime.sampleTime) / playerTime.sampleRate
+        return min(currentSeconds, totalTime())
+    }
+    
+    /// 取得總播放時間 (秒)
+    /// - Returns: TimeInterval
+    func totalTime() -> TimeInterval {
+        
+        guard let audioFile = audioFile else { return -1 }
+        
+        let sampleRate = audioFile.fileFormat.sampleRate
+        let length = Double(audioFile.length)
+        
+        return length / sampleRate
     }
 }

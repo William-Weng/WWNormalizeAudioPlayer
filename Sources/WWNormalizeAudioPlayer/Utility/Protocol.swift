@@ -15,10 +15,19 @@ public extension WWNormalizeAudioPlayer {
         /// 音樂播放完成
         /// - Parameters:
         ///   - player: WWNormalizeAudioPlayer
+        ///   - callbackType: AVAudioPlayerNodeCompletionCallbackType
         ///   - audioFile: AVAudioFile
-        func audioPlayer(_ player: WWNormalizeAudioPlayer, didFinishPlaying audioFile: AVAudioFile)
+        func audioPlayer(_ player: WWNormalizeAudioPlayer, callbackType: AVAudioPlayerNodeCompletionCallbackType, didFinishPlaying audioFile: AVAudioFile)
         
-        /// 相關錯誤
+        /// 音樂播放進度
+        /// - Parameters:
+        ///   - player: WWNormalizeAudioPlayer
+        ///   - audioFile: AVAudioFile
+        ///   - totalTime: TimeInterval
+        ///   - currentTime: TimeInterval
+        func audioPlayer(_ player: WWNormalizeAudioPlayer, audioFile: AVAudioFile, totalTime: TimeInterval, currentTime: TimeInterval)
+        
+        /// 播放相關錯誤
         /// - Parameters:
         ///   - player: WWNormalizeAudioPlayer
         ///   - error: Error

@@ -11,24 +11,28 @@ import WWNormalizeAudioPlayer
 
 final class ViewController: UIViewController {
     
-    private let normalizeAudioPlayer = WWNormalizeAudioPlayer()
+    private let audioPlayer = WWNormalizeAudioPlayer()
     private let url = Bundle.main.url(forResource: "audio", withExtension: "mp3")!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        normalizeAudioPlayer.delegate = self
-        normalizeAudioPlayer.play(with: url)
+        audioPlayer.delegate = self
+        audioPlayer.play(with: url)
     }
 }
 
 extension ViewController: WWNormalizeAudioPlayer.Deleagte {
     
-    func audioPlayer(_ player: WWNormalizeAudioPlayer, error: any Error) {
-        print(error)
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, callbackType: AVAudioPlayerNodeCompletionCallbackType, didFinishPlaying audioFile: AVAudioFile) {
+        print(callbackType)
     }
     
-    func audioPlayer(_ player: WWNormalizeAudioPlayer, didFinishPlaying audioFile: AVAudioFile) {
-        print(audioFile)
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, audioFile: AVAudioFile, totalTime: TimeInterval, currentTime: TimeInterval) {
+        print(currentTime / totalTime)
+    }
+    
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, error: any Error) {
+        print(error)
     }
 }
 

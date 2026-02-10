@@ -8,7 +8,7 @@
 ### [Installation with Swift Package Manager](https://medium.com/彼得潘的-swift-ios-app-開發問題解答集/使用-spm-安裝第三方套件-xcode-11-新功能-2c4ffcf85b4b)
 ```bash
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.0.0"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.1.0"))
 ]
 ```
 
@@ -22,8 +22,9 @@ dependencies: [
 ### 可用協定 (Deleagte)
 |函式|功能|
 |-|-|
-|audioPlayer(_:didFinishPlaying:)|音樂播放完成|
-|audioPlayer(_:error)|相關錯誤|
+|audioPlayer(_:callbackType:didFinishPlaying:)|音樂播放完成|
+|audioPlayer(_:audioFile:totalTime:currentTime:)|音樂播放進度|
+|audioPlayer(_:error)|播放相關錯誤|
 
 ### Example
 ```swift
@@ -33,24 +34,28 @@ import WWNormalizeAudioPlayer
 
 final class ViewController: UIViewController {
     
-    private let normalizeAudioPlayer = WWNormalizeAudioPlayer()
+    private let audioPlayer = WWNormalizeAudioPlayer()
     private let url = Bundle.main.url(forResource: "audio", withExtension: "mp3")!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        normalizeAudioPlayer.delegate = self
-        normalizeAudioPlayer.play(with: url)
+        audioPlayer.delegate = self
+        audioPlayer.play(with: url)
     }
 }
 
 extension ViewController: WWNormalizeAudioPlayer.Deleagte {
     
-    func audioPlayer(_ player: WWNormalizeAudioPlayer, error: any Error) {
-        print(error)
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, callbackType: AVAudioPlayerNodeCompletionCallbackType, didFinishPlaying audioFile: AVAudioFile) {
+        print(callbackType)
     }
     
-    func audioPlayer(_ player: WWNormalizeAudioPlayer, didFinishPlaying audioFile: AVAudioFile) {
-        print(audioFile)
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, audioFile: AVAudioFile, totalTime: TimeInterval, currentTime: TimeInterval) {
+        print(currentTime / totalTime)
+    }
+    
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, error: any Error) {
+        print(error)
     }
 }
 ```
