@@ -8,7 +8,7 @@
 ### [Installation with Swift Package Manager](https://medium.com/彼得潘的-swift-ios-app-開發問題解答集/使用-spm-安裝第三方套件-xcode-11-新功能-2c4ffcf85b4b)
 ```bash
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.1.1"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.1.2"))
 ]
 ```
 
@@ -19,6 +19,7 @@ dependencies: [
 |stop()|停止播放音樂|
 |pause()|暫停播放（保留目前進度）|
 |resume()|繼續播放（從暫停位置繼續）|
+|volume(_:)|調整音樂播放器音量 (0.0 ~ 1.0)|
 |setSession(category:isActive:)|設定AVAudioSession|
 
 ### 可用協定 (Deleagte)
