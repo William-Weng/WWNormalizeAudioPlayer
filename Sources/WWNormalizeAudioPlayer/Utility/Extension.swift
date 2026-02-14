@@ -9,14 +9,14 @@ import AVFAudio
 import Accelerate
 
 // MARK - AVAudioSession
-extension AVAudioSession {
+public extension AVAudioSession {
 
     /// 檢查系統音量 + 是否靜音
     func _systemParameter() -> (outputVolume: Float, isOtherAudioPlaying: Bool)  {
         return (outputVolume: outputVolume, isOtherAudioPlaying: isOtherAudioPlaying)
     }
     
-    /// [設定要使用的功能 (播放 / 錄音 / …)](https://cloud.tencent.com/developer/ask/sof/112809922)
+    /// [設定要優化的功能 (播放 / 錄音 / …)](https://cloud.tencent.com/developer/ask/sof/112809922)
     /// - Parameters:
     ///   - category: [Category](https://juejin.cn/post/7546101492715192355)
     ///   - mode: [Mode](https://guiyongdong.github.io/2019/07/19/【转】AVAudioSession-Category各种姿势/)

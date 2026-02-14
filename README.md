@@ -8,7 +8,7 @@
 ### [Installation with Swift Package Manager](https://medium.com/彼得潘的-swift-ios-app-開發問題解答集/使用-spm-安裝第三方套件-xcode-11-新功能-2c4ffcf85b4b)
 ```bash
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.2.3"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.2.4"))
 ]
 ```
 
@@ -25,7 +25,6 @@ dependencies: [
 |stop()|停止播放音樂|
 |pause()|暫停播放（保留目前進度）|
 |resume()|繼續播放（從暫停位置繼續）|
-|setSession(category:isActive:)|設定AVAudioSession|
 |currentTime()|取得當前播放時間 (秒)|
 |totalTime()|取得總播放時間 (秒)|
 
@@ -35,6 +34,12 @@ dependencies: [
 |audioPlayer(_:callbackType:didFinishPlaying:)|音樂播放完成|
 |audioPlayer(_:audioFile:totalTime:currentTime:)|音樂播放進度|
 |audioPlayer(_:error)|播放相關錯誤|
+
+### 可用擴展 (Extension)
+|函式|功能|
+|-|-|
+|_systemParameter()|檢查系統音量 + 是否靜音|
+|_setCategory(_:mode:policy:options:isActive:)|設定要優化的功能 (播放 / 錄音 / …)|
 
 ### Example
 ```swift

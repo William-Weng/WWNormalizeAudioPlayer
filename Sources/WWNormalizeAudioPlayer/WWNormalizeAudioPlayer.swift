@@ -92,18 +92,6 @@ public extension WWNormalizeAudioPlayer {
             delegate?.audioPlayer(self, error: error)
         }
     }
-        
-    /// [設定AVAudioSession](https://cloud.tencent.com/developer/ask/sof/112809922)
-    /// - Parameters:
-    ///   - category: [Category](https://juejin.cn/post/7546101492715192355)
-    ///   - mode: [Mode](https://guiyongdong.github.io/2019/07/19/【转】AVAudioSession-Category各种姿势/)
-    ///   - policy: [RouteSharingPolicy](https://www.jianshu.com/p/3e0a399380df)
-    ///   - options: CategoryOptions
-    ///   - isActive: Bool
-    /// - Returns: Result<Bool, Error>
-    func setSession(category: AVAudioSession.Category, mode: AVAudioSession.Mode = .default, policy: AVAudioSession.RouteSharingPolicy = .default, options: AVAudioSession.CategoryOptions = [], isActive: Bool) -> Result<Bool, Error> {
-        return AVAudioSession.sharedInstance()._setCategory(category, mode: mode, policy: policy, options: options, isActive: isActive)
-    }
     
     /// 取得當前播放時間 (秒)
     /// - Returns: TimeInterval
