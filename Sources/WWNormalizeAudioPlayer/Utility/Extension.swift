@@ -10,23 +10,24 @@ import Accelerate
 
 // MARK - AVAudioSession
 extension AVAudioSession {
-    
-    typealias AudioSystemParameter = (outputVolume: Float, isOtherAudioPlaying: Bool)
-    
+
     /// 檢查系統音量 + 是否靜音
-    func _systemParameter() -> AudioSystemParameter  {
+    func _systemParameter() -> (outputVolume: Float, isOtherAudioPlaying: Bool)  {
         return (outputVolume: outputVolume, isOtherAudioPlaying: isOtherAudioPlaying)
     }
     
     /// [設定要使用的功能 (播放 / 錄音 / …)](https://cloud.tencent.com/developer/ask/sof/112809922)
     /// - Parameters:
-    ///   - category: 功能項目
-    ///   - isActive: 是否運行
+    ///   - category: [Category](https://juejin.cn/post/7546101492715192355)
+    ///   - mode: [Mode](https://guiyongdong.github.io/2019/07/19/【转】AVAudioSession-Category各种姿势/)
+    ///   - policy: [RouteSharingPolicy](https://www.jianshu.com/p/3e0a399380df)
+    ///   - options: CategoryOptions
+    ///   - isActive: Bool
     /// - Returns: Result<Bool, Error>
-    func _setCategory(_ category: Category, isActive: Bool) -> Result<Bool, Error> {
+    func _setCategory(_ category: AVAudioSession.Category, mode: AVAudioSession.Mode = .default, policy: AVAudioSession.RouteSharingPolicy = .default, options: AVAudioSession.CategoryOptions = [], isActive: Bool) -> Result<Bool, Error> {
         
         do {
-            try setCategory(category)
+            try setCategory(category, mode: mode, policy: policy, options: options)
             try setActive(isActive)
             return .success(true)
         } catch {
