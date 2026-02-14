@@ -24,7 +24,7 @@ extension AVAudioSession {
     ///   - options: CategoryOptions
     ///   - isActive: Bool
     /// - Returns: Result<Bool, Error>
-    func _setCategory(_ category: AVAudioSession.Category, mode: AVAudioSession.Mode = .default, policy: AVAudioSession.RouteSharingPolicy = .default, options: AVAudioSession.CategoryOptions = [], isActive: Bool) -> Result<Bool, Error> {
+    func _setCategory(_ category: AVAudioSession.Category, mode: AVAudioSession.Mode, policy: AVAudioSession.RouteSharingPolicy, options: AVAudioSession.CategoryOptions, isActive: Bool) -> Result<Bool, Error> {
         
         do {
             try setCategory(category, mode: mode, policy: policy, options: options)
