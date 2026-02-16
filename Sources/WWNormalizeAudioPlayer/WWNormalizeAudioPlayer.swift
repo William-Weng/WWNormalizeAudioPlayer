@@ -15,18 +15,18 @@ open class WWNormalizeAudioPlayer {
 
     public private(set) var audioFile: AVAudioFile?
     
-    private var playerNode: AVAudioPlayerNode!
-    private var audioEngine: AVAudioEngine!
-    private var equalizerNode: AVAudioUnitEQ!
+    private var audioEngine: AVAudioEngine?
+    private var playerNode: AVAudioPlayerNode?
+    private var equalizerNode: AVAudioUnitEQ?
     
     private weak var displayLink: CADisplayLink?
     
     public var volume: Float {
-        get { audioEngine.mainMixerNode.outputVolume }
-        set { audioEngine.mainMixerNode.outputVolume = newValue }
+        get { audioEngine?.mainMixerNode.outputVolume ?? -1.0 }
+        set { audioEngine?.mainMixerNode.outputVolume = newValue }
     }
     
-    public var isHiddenProgress = false
+    public var preferredFrameRateRange: CAFrameRateRange? = CAFrameRateRange(minimum: 5, maximum: 5)
     
     public init() { initAudioEngine() }
     
@@ -46,10 +46,17 @@ public extension WWNormalizeAudioPlayer {
     ///   - callbackType: 回傳結束的時機
     func play(with url: URL, targetDB: Float? = -1.0, callbackType: AVAudioPlayerNodeCompletionCallbackType = .dataPlayedBack) {
         
+        guard let audioEngine = audioEngine,
+              let playerNode = playerNode,
+              let equalizerNode = equalizerNode
+        else {
+            return
+        }
+        
         do {
             _  = try audioEngine._start().get()
-            let audioFile = try AVAudioFile._build(forReading: url).get()
             
+            let audioFile = try AVAudioFile._build(forReading: url).get()
             self.audioFile = audioFile
             
             if let targetDB = targetDB {
@@ -61,7 +68,7 @@ public extension WWNormalizeAudioPlayer {
                 Task { @MainActor in delegate?.audioPlayer(self, callbackType: type, didFinishPlaying: audioFile) }
             }
             
-            if (!isHiddenProgress) { startTimer() }
+            if (preferredFrameRateRange != nil) { startTimer() }
             playerNode.play()
             
         } catch {
@@ -71,8 +78,8 @@ public extension WWNormalizeAudioPlayer {
     
     /// 停止播放音樂
     func stop() {
-        playerNode.stop()
-        audioEngine.stop()
+        playerNode?.stop()
+        audioEngine?.stop()
         stopTimer()
     }
     
@@ -80,8 +87,8 @@ public extension WWNormalizeAudioPlayer {
     func resume() {
         
         do {
-            try audioEngine.start()
-            playerNode.play()
+            try audioEngine?.start()
+            playerNode?.play()
             startTimer()
         } catch {
             delegate?.audioPlayer(self, error: error)
@@ -90,24 +97,23 @@ public extension WWNormalizeAudioPlayer {
     
     /// 暫停播放（保留目前進度）
     func pause() {
-        playerNode.pause()
-        audioEngine.pause()
+        playerNode?.pause()
+        audioEngine?.pause()
         stopTimer()
     }
     
     /// 取得當前播放時間 (秒)
     /// - Returns: TimeInterval
-    func currentTime() -> TimeInterval {
+    func currentTime() -> Result<TimeInterval, Error> {
         
-        guard let audioFile = audioFile,
-              let nodeTime = playerNode.lastRenderTime,
-              let playerTime = playerNode.playerTime(forNodeTime: nodeTime)
+        guard let nodeTime = playerNode?.lastRenderTime,
+              let playerTime = playerNode?.playerTime(forNodeTime: nodeTime)
         else {
-            return -1
+            return .failure(CustomError.noCurrentTime)
         }
         
         let currentSeconds = Double(playerTime.sampleTime) / playerTime.sampleRate
-        return min(currentSeconds, totalTime())
+        return .success(min(currentSeconds, totalTime()))
     }
     
     /// 取得總播放時間 (秒)
@@ -130,14 +136,18 @@ public extension WWNormalizeAudioPlayer {
     /// - Parameter displayLink: CADisplayLink
     func updatePlayTime(_ displayLink: CADisplayLink) {
         
-        let totalTime = totalTime()
-        let currentTime = currentTime()
-        
-        if let delegate = delegate, let audioFile = audioFile {
-            delegate.audioPlayer(self, audioFile: audioFile, totalTime: totalTime, currentTime: currentTime)
+        do {
+            let totalTime = totalTime()
+            let currentTime = try currentTime().get()
+            
+            if let delegate = delegate, let audioFile = audioFile {
+                delegate.audioPlayer(self, audioFile: audioFile, totalTime: totalTime, currentTime: currentTime)
+            }
+            
+            if (currentTime >= totalTime) { stop() }
+        } catch {
+            delegate?.audioPlayer(self, error: error)
         }
-        
-        if (currentTime >= totalTime) { stop() }
     }
 }
 
@@ -148,9 +158,13 @@ private extension WWNormalizeAudioPlayer {
     /// - Returns: Result<Bool, Error>
     func initAudioEngine() {
         
-        audioEngine = .init()
-        playerNode = .init()
-        equalizerNode = .init(numberOfBands: 1)
+        let audioEngine = AVAudioEngine()
+        let playerNode = AVAudioPlayerNode()
+        let equalizerNode = AVAudioUnitEQ(numberOfBands: 1)
+        
+        self.audioEngine = audioEngine
+        self.playerNode = playerNode
+        self.equalizerNode = equalizerNode
         
         audioEngine
             ._attachNode(equalizerNode, connectTo: audioEngine.mainMixerNode)
@@ -175,9 +189,14 @@ private extension WWNormalizeAudioPlayer {
     
     /// 開始計時
     func startTimer() {
+        
         stopTimer()
-        displayLink = CADisplayLink(target: self, selector: #selector(updatePlayTime(_:)))
-        displayLink?.add(to: .main, forMode: .common)
+        
+        if let preferredFrameRateRange = preferredFrameRateRange {
+            displayLink = CADisplayLink(target: self, selector: #selector(updatePlayTime(_:)))
+            displayLink?.add(to: .main, forMode: .common)
+            displayLink?.preferredFrameRateRange = preferredFrameRateRange
+        }
     }
     
     /// 停止播放時停掉 CADisplayLink
