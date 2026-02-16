@@ -13,7 +13,7 @@ open class WWNormalizeAudioPlayer {
     
     public weak var delegate: Deleagte?
 
-    public private(set) var audioFile: AVAudioFile!
+    public private(set) var audioFile: AVAudioFile?
     
     private var playerNode: AVAudioPlayerNode!
     private var audioEngine: AVAudioEngine!
@@ -48,7 +48,9 @@ public extension WWNormalizeAudioPlayer {
         
         do {
             _  = try audioEngine._start().get()
-            audioFile = try AVAudioFile._build(forReading: url).get()
+            let audioFile = try AVAudioFile._build(forReading: url).get()
+            
+            self.audioFile = audioFile
             
             if let targetDB = targetDB {
                 let gain = try normalizeGain(audioFile: audioFile, target: targetDB).get()
@@ -74,13 +76,6 @@ public extension WWNormalizeAudioPlayer {
         stopTimer()
     }
     
-    /// 暫停播放（保留目前進度）
-    func pause() {
-        playerNode.pause()
-        audioEngine.pause()
-        stopTimer()
-    }
-    
     /// 繼續播放（從暫停位置繼續）
     func resume() {
         
@@ -91,6 +86,13 @@ public extension WWNormalizeAudioPlayer {
         } catch {
             delegate?.audioPlayer(self, error: error)
         }
+    }
+    
+    /// 暫停播放（保留目前進度）
+    func pause() {
+        playerNode.pause()
+        audioEngine.pause()
+        stopTimer()
     }
     
     /// 取得當前播放時間 (秒)
@@ -131,7 +133,10 @@ public extension WWNormalizeAudioPlayer {
         let totalTime = totalTime()
         let currentTime = currentTime()
         
-        delegate?.audioPlayer(self, audioFile: audioFile, totalTime: totalTime, currentTime: currentTime)
+        if let delegate = delegate, let audioFile = audioFile {
+            delegate.audioPlayer(self, audioFile: audioFile, totalTime: totalTime, currentTime: currentTime)
+        }
+        
         if (currentTime >= totalTime) { stop() }
     }
 }
@@ -174,7 +179,7 @@ private extension WWNormalizeAudioPlayer {
         displayLink = CADisplayLink(target: self, selector: #selector(updatePlayTime(_:)))
         displayLink?.add(to: .main, forMode: .common)
     }
-        
+    
     /// 停止播放時停掉 CADisplayLink
     func stopTimer() {
         displayLink?.invalidate()
