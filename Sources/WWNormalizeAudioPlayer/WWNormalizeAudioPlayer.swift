@@ -26,7 +26,7 @@ open class WWNormalizeAudioPlayer {
         set { audioEngine?.mainMixerNode.outputVolume = newValue }
     }
     
-    public var preferredFrameRateRange: CAFrameRateRange? = CAFrameRateRange(minimum: 5, maximum: 5)
+    public var preferredFrameRateRange: CAFrameRateRange = .init(minimum: 5, maximum: 5)
     
     public init() { initAudioEngine() }
     
@@ -44,7 +44,7 @@ public extension WWNormalizeAudioPlayer {
     ///   - url: 音樂檔路徑
     ///   - targetDB: 正規化目標值
     ///   - callbackType: 回傳結束的時機
-    func play(with url: URL, targetDB: Float? = -1.0, callbackType: AVAudioPlayerNodeCompletionCallbackType = .dataPlayedBack) {
+    func play(with url: URL, targetDB: Float?, callbackType: AVAudioPlayerNodeCompletionCallbackType = .dataPlayedBack) {
         
         guard let audioEngine = audioEngine,
               let playerNode = playerNode,
@@ -54,21 +54,21 @@ public extension WWNormalizeAudioPlayer {
         }
         
         do {
-            _  = try audioEngine._start().get()
+            try audioEngine.start()
             
-            let audioFile = try AVAudioFile._build(forReading: url).get()
+            let audioFile = try AVAudioFile(forReading: url)
             self.audioFile = audioFile
             
             if let targetDB = targetDB {
-                let gain = try normalizeGain(audioFile: audioFile, target: targetDB).get()
+                let gain = try normalizeGain(audioFile: audioFile, target: targetDB)
                 equalizerNode.globalGain = gain
             }
             
-            playerNode._schedule(audioFile: audioFile, callbackType: callbackType) { [self] type in
+            playerNode.schedule(audioFile: audioFile, callbackType: callbackType) { [self] type in
                 Task { @MainActor in delegate?.audioPlayer(self, callbackType: type, didFinishPlaying: audioFile) }
             }
-            
-            if (preferredFrameRateRange != nil) { startTimer() }
+                        
+            startTimer()
             playerNode.play()
             
         } catch {
@@ -166,10 +166,13 @@ private extension WWNormalizeAudioPlayer {
         self.playerNode = playerNode
         self.equalizerNode = equalizerNode
         
-        audioEngine
-            ._attachNode(equalizerNode, connectTo: audioEngine.mainMixerNode)
-            ._attachNode(playerNode, connectTo: equalizerNode)
-            .prepare()
+        audioEngine.attach(playerNode)
+        audioEngine.attach(equalizerNode)
+
+        audioEngine.connect(playerNode, to: equalizerNode, format: nil)
+        audioEngine.connect(equalizerNode, to: audioEngine.mainMixerNode, format: nil)
+
+        audioEngine.prepare()
     }
     
     /// 正規化音量
@@ -177,14 +180,10 @@ private extension WWNormalizeAudioPlayer {
     ///   - audioFile: 音樂檔
     ///   - target: 目標值
     /// - Returns: Result<Float, Error>
-    func normalizeGain(audioFile: AVAudioFile, target targetDB: Float) -> Result<Float, Error> {
+    func normalizeGain(audioFile: AVAudioFile, target targetDB: Float) throws -> Float {
         
-        switch audioFile._analyzeChannelRMS() {
-        case .failure(let error): return .failure(error)
-        case .success(let rmsDB):
-            let normalizeGain = powf(10, (targetDB - rmsDB) / 20)
-            return .success(normalizeGain)
-        }
+        let rmsDB = try audioFile.analyzeChannelRMS()
+        return powf(10, (targetDB - rmsDB) / 20)
     }
     
     /// 開始計時
@@ -192,11 +191,9 @@ private extension WWNormalizeAudioPlayer {
         
         stopTimer()
         
-        if let preferredFrameRateRange = preferredFrameRateRange {
-            displayLink = CADisplayLink(target: self, selector: #selector(updatePlayTime(_:)))
-            displayLink?.add(to: .main, forMode: .common)
-            displayLink?.preferredFrameRateRange = preferredFrameRateRange
-        }
+        displayLink = CADisplayLink(target: self, selector: #selector(updatePlayTime(_:)))
+        displayLink?.add(to: .main, forMode: .common)
+        displayLink?.preferredFrameRateRange = preferredFrameRateRange
     }
     
     /// 停止播放時停掉 CADisplayLink

@@ -8,142 +8,47 @@
 import AVFAudio
 import Accelerate
 
-// MARK - AVAudioSession
-public extension AVAudioSession {
-
-    /// 檢查系統音量 + 是否靜音
-    func _systemParameter() -> (outputVolume: Float, isOtherAudioPlaying: Bool)  {
-        return (outputVolume: outputVolume, isOtherAudioPlaying: isOtherAudioPlaying)
-    }
-    
-    /// [設定要優化的功能 (播放 / 錄音 / …)](https://cloud.tencent.com/developer/ask/sof/112809922)
-    /// - Parameters:
-    ///   - category: [Category](https://juejin.cn/post/7546101492715192355)
-    ///   - mode: [Mode](https://guiyongdong.github.io/2019/07/19/【转】AVAudioSession-Category各种姿势/)
-    ///   - policy: [RouteSharingPolicy](https://www.jianshu.com/p/3e0a399380df)
-    ///   - options: CategoryOptions
-    ///   - isActive: Bool
-    /// - Returns: Result<Bool, Error>
-    func _setCategory(_ category: AVAudioSession.Category, mode: AVAudioSession.Mode, policy: AVAudioSession.RouteSharingPolicy, options: AVAudioSession.CategoryOptions, isActive: Bool) -> Result<Bool, Error> {
-        
-        do {
-            try setCategory(category, mode: mode, policy: policy, options: options)
-            try setActive(isActive)
-            return .success(true)
-        } catch {
-            return .failure(error)
-        }
-    }
-}
-
-// MARK: - AVAudioEngine
-extension AVAudioEngine {
-    
-    /// 啟動引擎
-    /// - Returns: Result<Bool, Error>
-    func _start() -> Result<Bool, Error> {
-        
-        do {
-            try start()
-            return .success(true)
-        } catch {
-            return .failure(error)
-        }
-    }
-    
-    /// 加上音效節點
-    /// - Parameter node: AVAudioNode
-    /// - Returns: Self
-    func _attach(node: AVAudioNode) -> Self {
-        attach(node)
-        return self
-    }
-    
-    /// [連接音效節點](https://cloud.tencent.com/developer/ask/sof/112809922)
-    /// - Parameters:
-    ///   - node: 來源節點
-    ///   - targetNode: 目的節點
-    ///   - format: 格式設定
-    /// - Returns: Self
-    func _connect(node: AVAudioNode, to targetNode: AVAudioNode, format: AVAudioFormat? = nil) -> Self {
-        connect(node, to: targetNode, format: format)
-        return self
-    }
-    
-    /// [加上音效節點，並且連接](https://blog.csdn.net/chennai1101/article/details/122621274)
-    /// - Parameters:
-    ///   - node: 來源節點
-    ///   - targetNode: 目的節點
-    ///   - format: 格式設定
-    /// - Returns: Self
-    func _attachNode(_ node: AVAudioNode, connectTo targetNode: AVAudioNode, format: AVAudioFormat? = nil) -> Self {
-        return self._attach(node: node)._connect(node: node, to: targetNode)
-    }
-}
-
-// MARK: - AVAudioFile (static)
+// MARK: - AVAudioFile
 extension AVAudioFile {
     
-    /// 讀取音效檔案
-    /// - Parameter url: 音效檔案位置
-    /// - Returns: Result<AVAudioFile, Error>
-    static func _build(forReading url: URL) -> Result<AVAudioFile, Error> {
+    /// 分析檔案最大音量的RMS分貝值 (DB)
+    /// - Returns: Result<Float, Error>
+    func analyzeChannelRMS(`default`: Float = -100) throws -> Float {
         
-        do {
-            let audioFile = try AVAudioFile(forReading: url)
-            return .success(audioFile)
-        } catch {
-            return .failure(error)
-        }
+        let rms = try channelRMS()
+        
+        
+        var rmsDB: Float = `default`
+        
+        if let rms = rms, rms > 0 { rmsDB = 20 * log10(rms) }
+        return rmsDB
     }
 }
 
 // MARK: - AVAudioFile
-extension AVAudioFile {
+private extension AVAudioFile {
     
     /// [把音樂檔案放滿到PCMBuffer內](https://blog.csdn.net/chennai1101/article/details/122621274)
     /// - Parameters:
     ///   - framePosition: 聲音框架位置
     ///   - buffer: AVAudioPCMBuffer
     /// - Returns: Result<Bool, Error>
-    func _read(from framePosition: AVAudioFramePosition = 0, into buffer: AVAudioPCMBuffer) -> Result<Bool, Error> {
+    func readFile(from framePosition: AVAudioFramePosition, into buffer: AVAudioPCMBuffer) throws {
         
         let capacity = AVAudioFrameCount(length)
         self.framePosition = framePosition
         
-        do {
-            try read(into: buffer, frameCount: capacity)
-            return .success(true)
-        } catch {
-            return .failure(error)
-        }
+        try read(into: buffer, frameCount: capacity)
     }
     
     /// 分析檔案最大音量的RMS值
     /// - Returns: Result<Float, Error>
-    func _channelRMS() -> Result<Float?, Error> {
+    func channelRMS() throws -> Float?{
         
-        guard let buffer = AVAudioPCMBuffer._build(of: self) else { return .success(nil) }
-
-        switch _read(into: buffer) {
-        case .failure(let error): return .failure(error)
-        case .success(_): return .success(buffer._channelRMS())
-        }
-    }
-    
-    /// 分析檔案最大音量的RMS分貝值 (DB)
-    /// - Returns: Result<Float, Error>
-    func _analyzeChannelRMS(`default`: Float = -100) -> Result<Float, Error> {
+        guard let buffer = AVAudioPCMBuffer.build(of: self) else { return nil }
+        try readFile(from: 0, into: buffer)
         
-        switch _channelRMS() {
-        case .failure(let error): return .failure(error)
-        case .success(let rms):
-            
-            var rmsDB: Float = `default`
-            
-            if let rms = rms, rms > 0 { rmsDB = 20 * log10(rms) }
-            return .success(rmsDB)
-        }
+        return buffer.channelRMS()
     }
 }
 
@@ -156,18 +61,18 @@ extension AVAudioPlayerNode {
     ///   - when: 開始時間
     ///   - callbackType: 哪個階段發出完成訊息
     ///   - completionHandler: 完成後的處理
-    func _schedule(audioFile: AVAudioFile, at when: AVAudioTime? = nil, callbackType: AVAudioPlayerNodeCompletionCallbackType, completionHandler: AVAudioPlayerNodeCompletionHandler?) {
+    func schedule(audioFile: AVAudioFile, at when: AVAudioTime? = nil, callbackType: AVAudioPlayerNodeCompletionCallbackType, completionHandler: AVAudioPlayerNodeCompletionHandler?) {
         scheduleFile(audioFile, at: when, completionCallbackType: callbackType, completionHandler: completionHandler)
     }
 }
 
 // MARK: - AVAudioPCMBuffer (static)
-extension AVAudioPCMBuffer {
+private extension AVAudioPCMBuffer {
     
     /// 建立一個跟檔案一樣大的PCMBuffer
     /// - Parameter file: AVAudioFile
     /// - Returns: AVAudioPCMBuffer?
-    static func _build(of file: AVAudioFile) -> AVAudioPCMBuffer? {
+    static func build(of file: AVAudioFile) -> AVAudioPCMBuffer? {
         
         let capacity = AVAudioFrameCount(file.length)
         let format = file.processingFormat
@@ -177,11 +82,11 @@ extension AVAudioPCMBuffer {
 }
 
 // MARK: - AVAudioPCMBuffer
-extension AVAudioPCMBuffer {
+private extension AVAudioPCMBuffer {
     
     /// [分析檔案最大音量的方均根值 - RMS](https://medium.com/blendvision/有關audio-normalization兩三事-dca62497e197)
     /// - Returns: Float
-    func _channelRMS() -> Float {
+    func channelRMS() -> Float {
         
         var rms: Float = 0.0
         let channelCount = Int(format.channelCount)
@@ -200,7 +105,7 @@ extension AVAudioPCMBuffer {
     
     /// [分析檔案最大音量值 - Peak](https://medium.com/blendvision/有關audio-normalization兩三事-下-c74f42ccc3f6)
     /// - Returns: Float
-    func _channelPeakAmplitude() -> Float {
+    func channelPeakAmplitude() -> Float {
         
         var peak: Float = 0.0
         let channelCount = Int(format.channelCount)
