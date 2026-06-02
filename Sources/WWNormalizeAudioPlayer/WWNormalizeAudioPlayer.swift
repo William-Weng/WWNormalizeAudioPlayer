@@ -223,10 +223,10 @@ private extension WWNormalizeAudioPlayer {
         self.playerNode = playerNode
         
         audioEngine.attach(playerNode)
-        audioEngine.attach(equalizer.equalizer)
+        audioEngine.attach(equalizer.node)
         
-        audioEngine.connect(playerNode, to: equalizer.equalizer, format: nil)
-        audioEngine.connect(equalizer.equalizer, to: audioEngine.mainMixerNode, format: nil)
+        audioEngine.connect(playerNode, to: equalizer.node, format: nil)
+        audioEngine.connect(equalizer.node, to: audioEngine.mainMixerNode, format: nil)
         
         equalizer.setEnabled(true)
         equalizer.reset()

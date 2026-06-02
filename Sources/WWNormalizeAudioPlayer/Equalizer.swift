@@ -13,14 +13,14 @@ extension WWNormalizeAudioPlayer {
     
     public class Equalizer {
         
-        let equalizer: AVAudioUnitEQ    // 底層的 AVAudioUnitEQ 實例
+        let node: AVAudioUnitEQ         // 底層的 AVAudioUnitEQ 實例
         let frequencies: [Float]        // 預設頻段對應的中心頻率
         
         /// 建立等化器
         /// - Parameter frequencies: 各 band 的預設頻率，預設為 10 段常見配置
         init(frequencies: [Float] = [32, 63, 125, 250, 500, 1000, 2000, 4000, 8000, 16000]) {
             self.frequencies = frequencies
-            self.equalizer = AVAudioUnitEQ(numberOfBands: frequencies.count)
+            self.node = AVAudioUnitEQ(numberOfBands: frequencies.count)
             configureDefaultBands()
         }
     }
@@ -31,8 +31,8 @@ public extension WWNormalizeAudioPlayer.Equalizer {
     
     /// 目前整體 EQ 的增益值
     var globalGain: Float {
-        get { equalizer.globalGain }
-        set { equalizer.globalGain = newValue }
+        get { node.globalGain }
+        set { node.globalGain = newValue }
     }
 }
 
@@ -41,7 +41,7 @@ public extension WWNormalizeAudioPlayer.Equalizer {
     
     /// 啟用或停用等化器
     /// - Parameter enabled: true 表示啟用，false 表示略過 EQ
-    func setEnabled(_ enabled: Bool) { equalizer.bypass = !enabled }
+    func setEnabled(_ enabled: Bool) { node.bypass = !enabled }
     
     /// 重置為平坦模式
     func reset() { preset(.flat) }
@@ -51,8 +51,8 @@ public extension WWNormalizeAudioPlayer.Equalizer {
     ///   - index: band 索引
     ///   - gain: 增益值，單位 dB
     func bandGain(index: Int, gain: Float) throws {
-        guard equalizer.bands.indices.contains(index) else { throw WWNormalizeAudioPlayer.CustomError.equalizerBandIndexOutOfRange(index: index, count: equalizer.bands.count) }
-        equalizer.bands[index].gain = gain
+        guard node.bands.indices.contains(index) else { throw WWNormalizeAudioPlayer.CustomError.equalizerBandIndexOutOfRange(index: index, count: node.bands.count) }
+        node.bands[index].gain = gain
     }
     
     /// 設定某個 band 的中心頻率
@@ -60,8 +60,8 @@ public extension WWNormalizeAudioPlayer.Equalizer {
     ///   - index: band 索引
     ///   - frequency: 頻率，單位 Hz
     func bandFrequency(index: Int, frequency: Float) throws {
-        guard equalizer.bands.indices.contains(index) else { throw WWNormalizeAudioPlayer.CustomError.equalizerBandIndexOutOfRange(index: index, count: equalizer.bands.count) }
-        equalizer.bands[index].frequency = frequency
+        guard node.bands.indices.contains(index) else { throw WWNormalizeAudioPlayer.CustomError.equalizerBandIndexOutOfRange(index: index, count: node.bands.count) }
+        node.bands[index].frequency = frequency
     }
     
     /// 設定某個 band 的頻寬
@@ -69,8 +69,8 @@ public extension WWNormalizeAudioPlayer.Equalizer {
     ///   - index: band 索引
     ///   - bandwidth: 頻寬，單位 octaves
     func bandBandwidth(index: Int, bandwidth: Float) throws {
-        guard equalizer.bands.indices.contains(index) else { throw WWNormalizeAudioPlayer.CustomError.equalizerBandIndexOutOfRange(index: index, count: equalizer.bands.count) }
-        equalizer.bands[index].bandwidth = bandwidth
+        guard node.bands.indices.contains(index) else { throw WWNormalizeAudioPlayer.CustomError.equalizerBandIndexOutOfRange(index: index, count: node.bands.count) }
+        node.bands[index].bandwidth = bandwidth
     }
     
     /// 設定某個 band 的濾波器類型
@@ -78,8 +78,8 @@ public extension WWNormalizeAudioPlayer.Equalizer {
     ///   - index: band 索引
     ///   - type: 濾波器類型
     func bandType(index: Int, type: WWNormalizeAudioPlayer.EqualizerBandType) throws {
-        guard equalizer.bands.indices.contains(index) else { throw WWNormalizeAudioPlayer.CustomError.equalizerBandIndexOutOfRange(index: index, count: equalizer.bands.count) }
-        equalizer.bands[index].filterType = map(type)
+        guard node.bands.indices.contains(index) else { throw WWNormalizeAudioPlayer.CustomError.equalizerBandIndexOutOfRange(index: index, count: node.bands.count) }
+        node.bands[index].filterType = map(type)
     }
     
     /// 設定某個 band 是否 bypass
@@ -87,8 +87,8 @@ public extension WWNormalizeAudioPlayer.Equalizer {
     ///   - index: band 索引
     ///   - bypass: true 表示跳過該 band
     func bandBypass(index: Int, bypass: Bool) throws {
-        guard equalizer.bands.indices.contains(index) else { throw WWNormalizeAudioPlayer.CustomError.equalizerBandIndexOutOfRange(index: index, count: equalizer.bands.count) }
-        equalizer.bands[index].bypass = bypass
+        guard node.bands.indices.contains(index) else { throw WWNormalizeAudioPlayer.CustomError.equalizerBandIndexOutOfRange(index: index, count: node.bands.count) }
+        node.bands[index].bypass = bypass
     }
         
     /// 一次設定某個 band 的完整參數
@@ -101,9 +101,9 @@ public extension WWNormalizeAudioPlayer.Equalizer {
     ///   - bypass: 是否略過
     func band(index: Int, type: WWNormalizeAudioPlayer.EqualizerBandType? = nil, frequency: Float? = nil, bandwidth: Float? = nil, gain: Float? = nil, bypass: Bool? = nil) throws {
         
-        guard equalizer.bands.indices.contains(index) else { throw WWNormalizeAudioPlayer.CustomError.equalizerBandIndexOutOfRange(index: index, count: equalizer.bands.count) }
+        guard node.bands.indices.contains(index) else { throw WWNormalizeAudioPlayer.CustomError.equalizerBandIndexOutOfRange(index: index, count: node.bands.count) }
 
-        let band = equalizer.bands[index]
+        let band = node.bands[index]
         
         if let type { band.filterType = map(type) }
         if let frequency { band.frequency = frequency }
@@ -117,7 +117,7 @@ public extension WWNormalizeAudioPlayer.Equalizer {
     func preset(_ preset: WWNormalizeAudioPlayer.EqualizerPreset) {
         
         switch preset {
-        case .flat: apply(gains: Array(repeating: 0, count: frequencies.count)); equalizer.globalGain = 0
+        case .flat: apply(gains: Array(repeating: 0, count: frequencies.count)); node.globalGain = 0
         case .bassBoost: apply(gains: [6, 5, 3, 1, 0, 0, -1, -2, -2, -3])
         case .bassCut: apply(gains: [-6, -5, -3, -1, 0, 0, 0, 0, 0, 0])
         case .trebleBoost: apply(gains: [-3, -2, -1, 0, 0, 1, 3, 5, 6, 7])
@@ -151,7 +151,7 @@ private extension WWNormalizeAudioPlayer.Equalizer {
     /// 初始化時設定每個 band 的預設參數
     func configureDefaultBands() {
         
-        for (index, band) in equalizer.bands.enumerated() {
+        for (index, band) in node.bands.enumerated() {
             band.bypass = false
             band.filterType = .parametric
             band.frequency = frequencies[index]
@@ -159,14 +159,14 @@ private extension WWNormalizeAudioPlayer.Equalizer {
             band.gain = 0.0
         }
         
-        equalizer.globalGain = 0.0
+        node.globalGain = 0.0
     }
     
     /// 套用一組增益值到所有 bands
     /// - Parameter gains: 每個 band 的 gain 值
     func apply(gains: [Float]) {
         
-        for (index, band) in equalizer.bands.enumerated() {
+        for (index, band) in node.bands.enumerated() {
             band.bypass = false
             band.filterType = .parametric
             band.frequency = frequencies[index]
