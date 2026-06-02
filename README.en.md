@@ -6,31 +6,31 @@
 [![Swift Package Manager-SUCCESS](https://img.shields.io/badge/Swift_Package_Manager-SUCCESS-blue.svg?style=flat)](https://developer.apple.com/swift/)
 [![LICENSE](https://img.shields.io/badge/LICENSE-MIT-yellow.svg?style=flat)](https://developer.apple.com/swift/)
 
-一個支援 **音量正規化** 與 **順序播放** 的音訊播放器，可讓多個音檔在播放時維持較一致的音量表現。
+A normalized audio player that supports **sequential playback** and **volume normalization**, helping multiple audio tracks stay at a consistent loudness level.
 
 [English](./README.en.md) | [繁體中文](./README.md)
 
 ---
 
-## 📖 簡介
+## 📖 Introduction
 
-`WWNormalizeAudioPlayer` 可用來播放一組音訊檔，並在需要時根據目標分貝值進行音量調整。
-它適合用在需要連續播放多段音檔，或希望避免不同來源音檔音量忽大忽小的情境。
-
----
-
-## ✨ 特色
-
-- 支援從 `Bundle` 以檔名直接播放音檔。
-- 支援 `URL` 陣列播放。
-- 支援多段音檔依序播放。
-- 支援音量正規化，可指定 `targetDB`。
-- 支援播放進度通知、單曲播放完成通知與錯誤回報。
-- 支援暫停、恢復與停止播放。
+`WWNormalizeAudioPlayer` plays a list of audio files and can adjust playback gain according to a target dB value.
+It is useful when you want to play multiple audio tracks in sequence without sudden volume jumps between sources.
 
 ---
 
-## 📦 安裝方式
+## ✨ Features
+
+- Play audio files directly from a `Bundle` by filename.
+- Play audio from an array of `URL`s.
+- Support sequential playback of multiple tracks.
+- Support volume normalization with a configurable `targetDB`.
+- Provide playback progress callbacks, track-finished callbacks, and error reporting.
+- Support pause, resume, and stop actions.
+
+---
+
+## 📦 Installation
 
 ### Swift Package Manager
 
@@ -42,9 +42,9 @@ dependencies: [
 
 ---
 
-## 🚀 使用方式
+## 🚀 Usage
 
-### 直接播放 Bundle 內音檔
+### Play audio files from a Bundle
 
 ```swift
 import WWNormalizeAudioPlayer
@@ -57,7 +57,7 @@ Task {
 }
 ```
 
-### 播放 URL 陣列
+### Play from an array of URLs
 
 ```swift
 let urls: [URL] = [
@@ -72,52 +72,52 @@ Task {
 
 ---
 
-## ⚙️ 可用參數
+## ⚙️ Available Properties
 
-| 參數 | 說明 |
+| Property | Description |
 |---|---|
-| `delegate` | `WWNormalizeAudioPlayer.Delegate`，用來接收播放進度、結束與錯誤通知。 |
-| `volume` | 調整播放器音量，範圍為 `0.0 ~ 1.0`。 |
-| `preferredFrameRateRange` | 設定進度更新頻率。 |
+| `delegate` | `WWNormalizeAudioPlayer.Delegate`, used to receive progress, completion, and error callbacks. |
+| `volume` | Adjusts the player volume, ranging from `0.0 ~ 1.0`. |
+| `preferredFrameRateRange` | Sets the update frame rate for progress callbacks. |
 
 ---
 
-## 🧩 可用方法
+## 🧩 Available Methods
 
-| 方法 | 說明 |
+| Method | Description |
 |---|---|
-| `play(at:filenames:targetDB:callbackType:)` | 播放指定 `Bundle` 中的音訊檔案列表。 |
-| `play(with:targetDB:callbackType:)` | 播放音訊 URL 陣列，支援順序播放與音量正規化。 |
-| `totalTime()` | 計算所有音訊檔案的總播放時間（秒）。 |
-| `stop()` | 停止播放並重置狀態。 |
-| `resume()` | 從暫停狀態繼續播放。 |
-| `pause()` | 暫停播放並保留目前進度。 |
+| `play(at:filenames:targetDB:callbackType:)` | Play a list of audio files from a specific `Bundle`. |
+| `play(with:targetDB:callbackType:)` | Play an array of audio URLs with sequential playback and volume normalization. |
+| `totalTime()` | Calculate the total duration of all audio files in seconds. |
+| `stop()` | Stop playback and reset the player state. |
+| `resume()` | Resume playback from the paused position. |
+| `pause()` | Pause playback while keeping the current position. |
 
 ---
 
-## ⚠️ 錯誤類型
+## ⚠️ Error Types
 
-| 錯誤 | 說明 |
+| Error | Description |
 |---|---|
-| `currentTimeUnavailable` | 目前時間無法取得。 |
-| `playerNodeNotReady` | 播放節點尚未準備好。 |
-| `audioSessionConfigurationFailed` | 音訊 Session 設定失敗。 |
+| `currentTimeUnavailable` | The current playback time is unavailable. |
+| `playerNodeNotReady` | The player node is not ready. |
+| `audioSessionConfigurationFailed` | Audio session configuration failed. |
 
 ---
 
 ## 📝 Delegate
 
-| 方法 | 說明 |
+| Method | Description |
 |---|---|
-| `audioPlayer(_:trackIndex:currentTime:tracTime:)` | 音訊播放進度更新時呼叫。 |
-| `audioPlayer(_:didFinishTrackIndex:callbackType:)` | 單一軌道播放完成時呼叫。 |
-| `audioPlayer(_:error:)` | 播放過程發生錯誤時呼叫。 |
+| `audioPlayer(_:trackIndex:currentTime:tracTime:)` | Called when playback progress updates. |
+| `audioPlayer(_:didFinishTrackIndex:callbackType:)` | Called when a track finishes playing. |
+| `audioPlayer(_:error:)` | Called when an error occurs during playback. |
 
-> 建議將 `Deleagte` 修正為 `Delegate`，`tracTime` 修正為 `trackTime`，命名會更一致。
+> It is recommended to rename `Deleagte` to `Delegate`, and `tracTime` to `trackTime` for consistency.
 
 ---
 
-## 💡 範例
+## 💡 Example
 
 ```swift
 import UIKit
