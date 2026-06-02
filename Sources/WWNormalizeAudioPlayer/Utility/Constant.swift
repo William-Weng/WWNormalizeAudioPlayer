@@ -11,7 +11,10 @@ import Foundation
 public extension WWNormalizeAudioPlayer {
     
     enum CustomError: Error {
-        case noCurrentTime
+        
+        case currentTimeUnavailable
+        case playerNodeNotReady
+        case audioSessionConfigurationFailed
     }
 }
     

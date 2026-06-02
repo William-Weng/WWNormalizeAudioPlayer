@@ -20,12 +20,7 @@ open class WWNormalizeAudioPlayer {
     private var equalizerNode: AVAudioUnitEQ?
     
     private weak var displayLink: CADisplayLink?
-    
-    public var volume: Float {
-        get { audioEngine?.mainMixerNode.outputVolume ?? -1.0 }
-        set { audioEngine?.mainMixerNode.outputVolume = newValue }
-    }
-    
+        
     public var preferredFrameRateRange: CAFrameRateRange = .init(minimum: 5, maximum: 5)
     
     public init() { initAudioEngine() }
@@ -33,6 +28,15 @@ open class WWNormalizeAudioPlayer {
     deinit {
         delegate = nil
         stopTimer()
+    }
+}
+
+// MARK: - 公開屬性
+public extension WWNormalizeAudioPlayer {
+    
+    var volume: Float {
+        get { audioEngine?.mainMixerNode.outputVolume ?? -1.0 }
+        set { audioEngine?.mainMixerNode.outputVolume = newValue }
     }
 }
 
@@ -44,35 +48,39 @@ public extension WWNormalizeAudioPlayer {
     ///   - url: 音樂檔路徑
     ///   - targetDB: 正規化目標值
     ///   - callbackType: 回傳結束的時機
-    func play(with url: URL, targetDB: Float?, callbackType: AVAudioPlayerNodeCompletionCallbackType = .dataPlayedBack) {
+    func play(with url: URL, targetDB: Float?, callbackType: AVAudioPlayerNodeCompletionCallbackType = .dataPlayedBack) async throws -> AVAudioPlayerNodeCompletionCallbackType {
         
-        guard let audioEngine = audioEngine,
-              let playerNode = playerNode,
-              let equalizerNode = equalizerNode
+        stop()
+        
+        guard let audioEngine,
+              let playerNode,
+              let equalizerNode
         else {
-            return
+            throw CustomError.playerNodeNotReady
         }
         
-        do {
-            try audioEngine.start()
+        try audioEngine.start()
+        
+        let audioFile = try AVAudioFile(forReading: url)
+        self.audioFile = audioFile
+        
+        if let targetDB {
+            let gain = try normalizeGain(audioFile: audioFile, target: targetDB)
+            equalizerNode.globalGain = gain
+        }
+        
+        return try await withCheckedContinuation { continuation in
             
-            let audioFile = try AVAudioFile(forReading: url)
-            self.audioFile = audioFile
-            
-            if let targetDB = targetDB {
-                let gain = try normalizeGain(audioFile: audioFile, target: targetDB)
-                equalizerNode.globalGain = gain
+            playerNode.scheduleFile(audioFile, at: nil, completionCallbackType: callbackType) { [weak self] type in
+                
+                guard let self else { return }
+                
+                continuation.resume(returning: type)
+                self.delegate?.audioPlayer(self, callbackType: type, didFinishPlaying: audioFile)
             }
             
-            playerNode.schedule(audioFile: audioFile, callbackType: callbackType) { [self] type in
-                Task { @MainActor in delegate?.audioPlayer(self, callbackType: type, didFinishPlaying: audioFile) }
-            }
-                        
-            startTimer()
             playerNode.play()
-            
-        } catch {
-            delegate?.audioPlayer(self, error: error)
+            startTimer()
         }
     }
     
@@ -84,15 +92,11 @@ public extension WWNormalizeAudioPlayer {
     }
     
     /// 繼續播放（從暫停位置繼續）
-    func resume() {
+    func resume() throws {
         
-        do {
-            try audioEngine?.start()
-            playerNode?.play()
-            startTimer()
-        } catch {
-            delegate?.audioPlayer(self, error: error)
-        }
+        try audioEngine?.start()
+        playerNode?.play()
+        startTimer()
     }
     
     /// 暫停播放（保留目前進度）
@@ -100,32 +104,6 @@ public extension WWNormalizeAudioPlayer {
         playerNode?.pause()
         audioEngine?.pause()
         stopTimer()
-    }
-    
-    /// 取得當前播放時間 (秒)
-    /// - Returns: TimeInterval
-    func currentTime() -> Result<TimeInterval, Error> {
-        
-        guard let nodeTime = playerNode?.lastRenderTime,
-              let playerTime = playerNode?.playerTime(forNodeTime: nodeTime)
-        else {
-            return .failure(CustomError.noCurrentTime)
-        }
-        
-        let currentSeconds = Double(playerTime.sampleTime) / playerTime.sampleRate
-        return .success(min(currentSeconds, totalTime()))
-    }
-    
-    /// 取得總播放時間 (秒)
-    /// - Returns: TimeInterval
-    func totalTime() -> TimeInterval {
-        
-        guard let audioFile = audioFile else { return -1 }
-        
-        let sampleRate = audioFile.fileFormat.sampleRate
-        let length = Double(audioFile.length)
-        
-        return length / sampleRate
     }
 }
 
@@ -138,7 +116,7 @@ public extension WWNormalizeAudioPlayer {
         
         do {
             let totalTime = totalTime()
-            let currentTime = try currentTime().get()
+            let currentTime = try currentTime()
             
             if let delegate = delegate, let audioFile = audioFile {
                 delegate.audioPlayer(self, audioFile: audioFile, totalTime: totalTime, currentTime: currentTime)
@@ -184,6 +162,32 @@ private extension WWNormalizeAudioPlayer {
         
         let rmsDB = try audioFile.analyzeChannelRMS()
         return powf(10, (targetDB - rmsDB) / 20)
+    }
+    
+    /// 取得當前播放時間 (秒)
+    /// - Returns: TimeInterval
+    func currentTime() throws -> TimeInterval {
+        
+        guard let nodeTime = playerNode?.lastRenderTime,
+              let playerTime = playerNode?.playerTime(forNodeTime: nodeTime)
+        else {
+            throw CustomError.currentTimeUnavailable
+        }
+        
+        let currentSeconds = Double(playerTime.sampleTime) / playerTime.sampleRate
+        return min(currentSeconds, totalTime())
+    }
+    
+    /// 取得總播放時間 (秒)
+    /// - Returns: TimeInterval
+    func totalTime() -> TimeInterval {
+        
+        guard let audioFile = audioFile else { return -1 }
+        
+        let sampleRate = audioFile.fileFormat.sampleRate
+        let length = Double(audioFile.length)
+        
+        return length / sampleRate
     }
     
     /// 開始計時

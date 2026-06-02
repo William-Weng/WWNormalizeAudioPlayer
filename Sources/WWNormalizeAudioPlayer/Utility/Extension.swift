@@ -52,20 +52,6 @@ private extension AVAudioFile {
     }
 }
 
-// MARK: - AVAudioPlayerNode
-extension AVAudioPlayerNode {
-    
-    /// 排定音樂檔案
-    /// - Parameters:
-    ///   - audioFile: 音效檔案
-    ///   - when: 開始時間
-    ///   - callbackType: 哪個階段發出完成訊息
-    ///   - completionHandler: 完成後的處理
-    func schedule(audioFile: AVAudioFile, at when: AVAudioTime? = nil, callbackType: AVAudioPlayerNodeCompletionCallbackType, completionHandler: AVAudioPlayerNodeCompletionHandler?) {
-        scheduleFile(audioFile, at: when, completionCallbackType: callbackType, completionHandler: completionHandler)
-    }
-}
-
 // MARK: - AVAudioPCMBuffer (static)
 private extension AVAudioPCMBuffer {
     

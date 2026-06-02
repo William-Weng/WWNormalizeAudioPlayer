@@ -16,8 +16,9 @@ final class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         audioPlayer.delegate = self
-        audioPlayer.play(with: url, targetDB: -1.0)
+        Task { try await audioPlayer.play(with: url, targetDB: -1.0) }
     }
 }
 
