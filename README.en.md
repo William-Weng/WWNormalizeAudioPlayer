@@ -86,8 +86,8 @@ Task {
 
 | Method | Description |
 |---|---|
-| `play(at:filenames:targetDB:callbackType:)` | Play a list of audio files from a specific `Bundle`. |
-| `play(with:targetDB:callbackType:)` | Play an array of audio URLs with sequential playback and volume normalization. |
+| `play(at:filenames:targetDB:callbackType:loop:shuffle:)` | Play a list of audio files from a specific `Bundle`. |
+| `play(with:targetDB:callbackType:loop:shuffle:)` | Play an array of audio URLs with sequential playback and volume normalization. |
 | `totalTime()` | Calculate the total duration of all audio files in seconds. |
 | `stop()` | Stop playback and reset the player state. |
 | `resume()` | Resume playback from the paused position. |
@@ -134,7 +134,7 @@ final class ViewController: UIViewController {
         
         Task {
             audioPlayer.delegate = self
-            try? await audioPlayer.play(filenames: filenames)
+            await audioPlayer.play(filenames: filenames)
         }
     }
 }

@@ -36,7 +36,7 @@
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.4.0"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.4.1"))
 ]
 ```
 
@@ -86,8 +86,8 @@ Task {
 
 | 方法 | 說明 |
 |---|---|
-| `play(at:filenames:targetDB:callbackType:)` | 播放指定 `Bundle` 中的音訊檔案列表。 |
-| `play(with:targetDB:callbackType:)` | 播放音訊 URL 陣列，支援順序播放與音量正規化。 |
+| `play(at:filenames:targetDB:callbackType:loop:shuffle:)` | 播放指定 `Bundle` 中的音訊檔案列表。 |
+| `play(with:targetDB:callbackType:loop:shuffle:)` | 播放音訊 URL 陣列，支援順序播放與音量正規化。 |
 | `totalTime()` | 計算所有音訊檔案的總播放時間（秒）。 |
 | `stop()` | 停止播放並重置狀態。 |
 | `resume()` | 從暫停狀態繼續播放。 |
@@ -134,7 +134,7 @@ final class ViewController: UIViewController {
         
         Task {
             audioPlayer.delegate = self
-            try? await audioPlayer.play(filenames: filenames)
+            await audioPlayer.play(filenames: filenames)
         }
     }
 }

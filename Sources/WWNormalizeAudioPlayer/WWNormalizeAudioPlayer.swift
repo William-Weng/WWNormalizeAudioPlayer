@@ -23,6 +23,8 @@ open class WWNormalizeAudioPlayer {
     private var currentTrackIndex: Int = 0
     private var audioURLs: [URL] = []
     private var completedTracksDuration: TimeInterval = 0
+    private var isLoop: Bool = false
+    private var playbackState: PlaybackState = .idle
     
     private weak var displayLink: CADisplayLink?
     
@@ -52,11 +54,13 @@ public extension WWNormalizeAudioPlayer {
     ///   - filenames: 音頻文件名陣列
     ///   - targetDB: 目標音量分貝值，nil 則不進行音量正規化
     ///   - callbackType: 播放完成回調類型，預設為 .dataPlayedBack
+    ///   - loop: 是否要循環播放
+    ///   - shuffle: 是否要隨曲播放
     /// - Throws: 當檔案不存在或播放失敗時丟出錯誤
-    func play(at bundle: Bundle = .main, filenames: [String], targetDB: Float? = nil, callbackType: AVAudioPlayerNodeCompletionCallbackType = .dataPlayedBack) async {
+    func play(at bundle: Bundle = .main, filenames: [String], targetDB: Float? = nil, callbackType: AVAudioPlayerNodeCompletionCallbackType = .dataPlayedBack, loop: Bool = false, shuffle: Bool = false) async {
         
         let urls = filenames.compactMap { bundle.bundleURL.appendingPathComponent($0) }
-        try await play(with: urls, targetDB: targetDB, callbackType: callbackType)
+        try await play(with: urls, targetDB: targetDB, callbackType: callbackType, loop: loop, shuffle: shuffle)
     }
     
     /// 播放音頻 URL 陣列，支援順序播放和音量正規化
@@ -64,31 +68,46 @@ public extension WWNormalizeAudioPlayer {
     ///   - audioURLs: 音頻文件 URL 陣列
     ///   - targetDB: 目標音量分貝值，nil 則不進行音量正規化
     ///   - callbackType: 播放完成回調類型，預設為 .dataPlayedBack
+    ///   - loop: 是否要循環播放
+    ///   - shuffle: 是否要隨曲播放
     /// - Throws: 當音頻檔案無法讀取或播放失敗時丟出錯誤
-    func play(with audioURLs: [URL], targetDB: Float? = nil, callbackType: AVAudioPlayerNodeCompletionCallbackType = .dataPlayedBack) async {
+    func play(with audioURLs: [URL], targetDB: Float? = nil, callbackType: AVAudioPlayerNodeCompletionCallbackType = .dataPlayedBack, loop: Bool = false, shuffle: Bool = false) async {
         
         stop()
         
         guard !audioURLs.isEmpty else { return }
         
         self.audioURLs = audioURLs
+        self.isLoop = loop
+        self.playbackState = .playing
         
-        for url in audioURLs {
-                        
-            do {
+        repeat {
+            
+            let playURLs = shuffle ? self.audioURLs.shuffled() : self.audioURLs
+            
+            currentTrackIndex = 0
+            completedTracksDuration = 0
+            
+            for url in playURLs {
+                
+                guard playbackState == .playing else { return }
                 
                 let trackIndex = currentTrackIndex
-                let completionType = try await playAudio(url: url, targetDB: targetDB, callbackType: callbackType)
                 
-                delegate?.audioPlayer(self, didFinishTrackIndex: trackIndex, callbackType: completionType)
+                do {
+                    let completionType = try await playAudio(url: url, targetDB: targetDB, callbackType: callbackType)
+
+                    delegate?.audioPlayer(self, didFinishTrackIndex: trackIndex, callbackType: completionType)
+                    completedTracksDuration += currentTrackTotalTime()
+
+                } catch {
+                    delegate?.audioPlayer(self, error: error)
+                }
                 
-                completedTracksDuration += currentTrackTotalTime()
                 currentTrackIndex += 1
-                
-            } catch {
-                delegate?.audioPlayer(self, error: error)
             }
-        }
+            
+        } while isLoop && playbackState == .playing
     }
     
     /// 計算所有音頻文件的總播放時長（單位：秒）
@@ -106,7 +125,10 @@ public extension WWNormalizeAudioPlayer {
     /// 停止播放並重置狀態
     func stop() {
         
+        isLoop = false
+        playbackState = .stopped
         currentTrackIndex = 0
+        completedTracksDuration = 0
         
         playerNode?.stop()
         audioEngine?.stop()
@@ -115,29 +137,51 @@ public extension WWNormalizeAudioPlayer {
     
     /// 恢復播放（從暫停狀態繼續）
     func resume() {
-        playerNode?.play()
-        startTimer()
+        
+        guard playbackState == .paused else { return }
+        
+        do {
+            playbackState = .playing
+            try audioEngine?.start()
+            playerNode?.play()
+            startTimer()
+        } catch {
+            delegate?.audioPlayer(self, error: error)
+        }
     }
     
     /// 暫停播放（保持當前位置）
     func pause() {
+        
+        guard playbackState == .playing else { return }
+        
+        playbackState = .paused
         playerNode?.pause()
         audioEngine?.pause()
         stopTimer()
     }
+    
+    /// 設定是否要循環播放
+    /// - Parameter enabled: 循環播放
+    func setLoopEnabled(_ enabled: Bool) {
+        isLoop = enabled
+    }
 }
 
-// MARK: - 小工具
+// MARK: - @objc
 @objc private extension WWNormalizeAudioPlayer {
     
+    /// 更新播放進度時間
+    /// - Parameter displayLink: 由 CADisplayLink 觸發的更新回呼
+    /// - Note: 此方法通常用於定期刷新目前播放時間並通知 delegate
     func updatePlayTime(_ displayLink: CADisplayLink) {
         
         do {
-            let tracTime = currentTrackTotalTime()
+            let trackTime = currentTrackTotalTime()
             let currentTime = try currentTime()
             
             if currentTrackIndex >= audioURLs.count { stop() }
-            delegate?.audioPlayer(self, trackIndex: currentTrackIndex, currentTime: currentTime, trackTime: tracTime)
+            delegate?.audioPlayer(self, trackIndex: currentTrackIndex, currentTime: currentTime, trackTime: trackTime)
             
         } catch {
             delegate?.audioPlayer(self, error: error)
@@ -149,7 +193,6 @@ public extension WWNormalizeAudioPlayer {
 private extension WWNormalizeAudioPlayer {
     
     /// 初始化音樂引擎
-    /// - Returns: Result<Bool, Error>
     func initAudioEngine() {
         
         let audioEngine = AVAudioEngine()
