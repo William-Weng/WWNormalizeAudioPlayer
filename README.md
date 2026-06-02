@@ -113,8 +113,6 @@ Task {
 | `audioPlayer(_:didFinishTrackIndex:callbackType:)` | 單一軌道播放完成時呼叫。 |
 | `audioPlayer(_:error:)` | 播放過程發生錯誤時呼叫。 |
 
-> 建議將 `Deleagte` 修正為 `Delegate`，`tracTime` 修正為 `trackTime`，命名會更一致。
-
 ---
 
 ## 💡 範例

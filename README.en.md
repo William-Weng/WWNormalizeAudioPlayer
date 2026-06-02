@@ -113,8 +113,6 @@ Task {
 | `audioPlayer(_:didFinishTrackIndex:callbackType:)` | Called when a track finishes playing. |
 | `audioPlayer(_:error:)` | Called when an error occurs during playback. |
 
-> It is recommended to rename `Deleagte` to `Delegate`, and `tracTime` to `trackTime` for consistency.
-
 ---
 
 ## 💡 Example
