@@ -14,6 +14,8 @@ extension WWNormalizeAudioPlayer {
     
     public final class SpectrumAnalyzer {
         
+        private let queue = DispatchQueue(label: "io.github.william-weng.WWNormalizeAudioPlayer")        /// 背景分析 queue
+
         private let fftSize: Int
         private let barCount: Int
         private let log2n: vDSP_Length
@@ -23,8 +25,6 @@ extension WWNormalizeAudioPlayer {
         private var maxDB: Float = 0                    // 振幅正規化的最高 dB 值
         private var smoothing: Float = 0.25             // bar 平滑係數，越大反應越快，越小越平滑
         private var smoothedBars: [Float]               // 平滑用的暫存 bar 值
-
-        private let queue = DispatchQueue(label: "com.wwnormalizeaudio.spectrum")        /// 背景分析 queue
         
         /// 建立頻譜分析器
         /// - Parameters:

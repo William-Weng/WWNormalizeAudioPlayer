@@ -13,13 +13,25 @@ final class ViewController: UIViewController {
     
     private let audioPlayer = WWNormalizeAudioPlayer()
     private let filenames = ["do-re-mi-re-do.m4a", "audio.mp3"]
-    
+    private let spectrumAnalyzer = WWNormalizeAudioPlayer.SpectrumAnalyzer()
+
     override func viewDidLoad() {
         super.viewDidLoad()
         
         Task {
-            try audioPlayer.configure(delegate: self)
-            await audioPlayer.play(filenames: filenames)
+            do {
+                try audioPlayer.configure(delegate: self)
+
+                let sampleRate = audioPlayer.audioNode.outputFormat(forBus: 0).sampleRate
+                
+                spectrumAnalyzer.installTap(on: audioPlayer.audioNode, sampleRate: sampleRate) { bars in
+                    print(bars)
+                }
+
+                await audioPlayer.play(filenames: filenames)
+            } catch {
+                print(error)
+            }
         }
     }
 }

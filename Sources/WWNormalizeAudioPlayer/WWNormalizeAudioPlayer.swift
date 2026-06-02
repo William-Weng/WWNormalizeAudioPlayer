@@ -44,6 +44,10 @@ public extension WWNormalizeAudioPlayer {
         get { audioEngine?.mainMixerNode.outputVolume ?? -1.0 }
         set { audioEngine?.mainMixerNode.outputVolume = newValue }
     }
+    
+    var audioNode: AVAudioUnitEQ {
+        equalizer.audioNode
+    }
 }
 
 // MARK: - 公開函式
@@ -223,10 +227,10 @@ private extension WWNormalizeAudioPlayer {
         self.playerNode = playerNode
         
         audioEngine.attach(playerNode)
-        audioEngine.attach(equalizer.node)
+        audioEngine.attach(equalizer.audioNode)
         
-        audioEngine.connect(playerNode, to: equalizer.node, format: nil)
-        audioEngine.connect(equalizer.node, to: audioEngine.mainMixerNode, format: nil)
+        audioEngine.connect(playerNode, to: equalizer.audioNode, format: nil)
+        audioEngine.connect(equalizer.audioNode, to: audioEngine.mainMixerNode, format: nil)
         
         equalizer.setEnabled(true)
         equalizer.reset()
