@@ -36,7 +36,7 @@ It is useful when you want to play multiple audio tracks in sequence without sud
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.4.2"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.4.3"))
 ]
 ```
 
@@ -78,6 +78,7 @@ Task {
 
 | Property | Description |
 |---|---|
+| `equalizer` | Audio equalizer wrapper. |
 | `volume` | Adjusts the player volume, ranging from `0.0 ~ 1.0`. |
 
 ---

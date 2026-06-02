@@ -11,7 +11,7 @@ import AVFAudio
 /// - Note: 透過 AVAudioUnitEQ 提供預設音色、單一頻段調整與濾波器型態切換
 extension WWNormalizeAudioPlayer {
     
-    final class Equalizer {
+    public class Equalizer {
         
         let equalizer: AVAudioUnitEQ    // 底層的 AVAudioUnitEQ 實例
         let frequencies: [Float]        // 預設頻段對應的中心頻率
@@ -27,7 +27,7 @@ extension WWNormalizeAudioPlayer {
 }
 
 // MARK: - 公開屬性
-extension WWNormalizeAudioPlayer.Equalizer {
+public extension WWNormalizeAudioPlayer.Equalizer {
     
     /// 目前整體 EQ 的增益值
     var globalGain: Float {
@@ -37,7 +37,7 @@ extension WWNormalizeAudioPlayer.Equalizer {
 }
 
 // MARK: - 公開函式
-extension WWNormalizeAudioPlayer.Equalizer {
+public extension WWNormalizeAudioPlayer.Equalizer {
     
     /// 啟用或停用等化器
     /// - Parameter enabled: true 表示啟用，false 表示略過 EQ

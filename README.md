@@ -36,7 +36,7 @@
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.4.2"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.4.3"))
 ]
 ```
 
@@ -78,6 +78,7 @@ Task {
 
 | 參數 | 說明 |
 |---|---|
+| `equalizer` | 音訊等化器封裝。 |
 | `volume` | 調整播放器音量，範圍為 `0.0 ~ 1.0`。 |
 
 ---

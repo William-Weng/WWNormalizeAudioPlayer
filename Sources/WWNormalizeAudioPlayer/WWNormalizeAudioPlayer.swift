@@ -11,13 +11,14 @@ import Accelerate
 // MARK: - 音量正規化聲音播放器
 open class WWNormalizeAudioPlayer {
     
+    public let equalizer: Equalizer = .init()
+    
     private weak var delegate: Delegate?
     
     private var preferredFrameRateRange: CAFrameRateRange = .init(minimum: 5, maximum: 5)
     private var audioFile: AVAudioFile?
     private var audioEngine: AVAudioEngine?
     private var playerNode: AVAudioPlayerNode?
-    private var equalizer: Equalizer = .init()
 
     private var currentTrackIndex: Int = 0
     private var audioURLs: [URL] = []
@@ -217,11 +218,9 @@ private extension WWNormalizeAudioPlayer {
         
         let audioEngine = AVAudioEngine()
         let playerNode = AVAudioPlayerNode()
-        let equalizer = WWNormalizeAudioPlayer.Equalizer()
         
         self.audioEngine = audioEngine
         self.playerNode = playerNode
-        self.equalizer = equalizer
         
         audioEngine.attach(playerNode)
         audioEngine.attach(equalizer.equalizer)
@@ -253,7 +252,12 @@ private extension WWNormalizeAudioPlayer {
         let audioFile = try AVAudioFile(forReading: url)
         self.audioFile = audioFile
         
-        if let targetDB { try equalizer.normalizationGain(of: audioFile, targetDB: targetDB) }
+        if let targetDB {
+            let gainDB = try equalizer.normalizationGain(of: audioFile, targetDB: targetDB)
+            equalizer.globalGain = gainDB
+        } else {
+            equalizer.globalGain = 0
+        }
         
         return try await playAudioFile(audioFile: audioFile, playerNode: playerNode, callbackType: callbackType)
     }
