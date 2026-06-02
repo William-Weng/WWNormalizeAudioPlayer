@@ -18,7 +18,7 @@ final class ViewController: UIViewController {
         super.viewDidLoad()
         
         Task {
-            audioPlayer.delegate = self
+            try audioPlayer.configure(delegate: self)
             await audioPlayer.play(filenames: filenames)
         }
     }
@@ -40,7 +40,7 @@ extension ViewController: WWNormalizeAudioPlayer.Delegate {
     }
     
     func audioPlayer(_ player: WWNormalizeAudioPlayer, error: any Error) {
-        print("error = \(error)")
+        print("error = \(error.localizedDescription)")
     }
 }
 

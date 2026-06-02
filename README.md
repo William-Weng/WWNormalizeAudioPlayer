@@ -36,7 +36,7 @@
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.4.1"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.4.2"))
 ]
 ```
 
@@ -53,7 +53,8 @@ let player = WWNormalizeAudioPlayer()
 let filenames = ["do-re-mi-re-do.m4a", "audio.mp3"]
 
 Task {
-    try await player.play(filenames: filenames)
+    try audioPlayer.configure(delegate: self)
+    await audioPlayer.play(filenames: filenames)
 }
 ```
 
@@ -66,7 +67,8 @@ let urls: [URL] = [
 ]
 
 Task {
-    try await player.play(with: urls, targetDB: -14)
+    try audioPlayer.configure(delegate: self)
+    await audioPlayer.play(filenames: filenames)
 }
 ```
 
@@ -76,9 +78,7 @@ Task {
 
 | 參數 | 說明 |
 |---|---|
-| `delegate` | `WWNormalizeAudioPlayer.Delegate`，用來接收播放進度、結束與錯誤通知。 |
 | `volume` | 調整播放器音量，範圍為 `0.0 ~ 1.0`。 |
-| `preferredFrameRateRange` | 設定進度更新頻率。 |
 
 ---
 
@@ -86,6 +86,7 @@ Task {
 
 | 方法 | 說明 |
 |---|---|
+| `configure(delegate:preferredFrameRateRange:)` | 設定代理與更新頻率，並初始化音訊引擎。 |
 | `play(at:filenames:targetDB:callbackType:loop:shuffle:)` | 播放指定 `Bundle` 中的音訊檔案列表。 |
 | `play(with:targetDB:callbackType:loop:shuffle:)` | 播放音訊 URL 陣列，支援順序播放與音量正規化。 |
 | `totalTime()` | 計算所有音訊檔案的總播放時間（秒）。 |
@@ -131,7 +132,7 @@ final class ViewController: UIViewController {
         super.viewDidLoad()
         
         Task {
-            audioPlayer.delegate = self
+            try audioPlayer.configure(delegate: self)
             await audioPlayer.play(filenames: filenames)
         }
     }

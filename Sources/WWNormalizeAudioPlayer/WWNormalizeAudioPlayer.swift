@@ -11,15 +11,14 @@ import Accelerate
 // MARK: - 音量正規化聲音播放器
 open class WWNormalizeAudioPlayer {
     
-    public weak var delegate: Delegate?
-    public var preferredFrameRateRange: CAFrameRateRange = .init(minimum: 5, maximum: 5)
-
-    public private(set) var audioFile: AVAudioFile?
-
+    private weak var delegate: Delegate?
+    
+    private var preferredFrameRateRange: CAFrameRateRange = .init(minimum: 5, maximum: 5)
+    private var audioFile: AVAudioFile?
     private var audioEngine: AVAudioEngine?
     private var playerNode: AVAudioPlayerNode?
-    private var equalizerNode: AVAudioUnitEQ?
-    
+    private var equalizer: Equalizer = .init()
+
     private var currentTrackIndex: Int = 0
     private var audioURLs: [URL] = []
     private var completedTracksDuration: TimeInterval = 0
@@ -28,7 +27,7 @@ open class WWNormalizeAudioPlayer {
     
     private weak var displayLink: CADisplayLink?
     
-    public init() { initAudioEngine() }
+    public init() {}
     
     deinit {
         stopTimer()
@@ -39,6 +38,7 @@ open class WWNormalizeAudioPlayer {
 // MARK: - 公開屬性
 public extension WWNormalizeAudioPlayer {
     
+    /// 調整播放器音量，範圍為 `0.0 ~ 1.0`
     var volume: Float {
         get { audioEngine?.mainMixerNode.outputVolume ?? -1.0 }
         set { audioEngine?.mainMixerNode.outputVolume = newValue }
@@ -47,6 +47,17 @@ public extension WWNormalizeAudioPlayer {
 
 // MARK: - 公開函式
 public extension WWNormalizeAudioPlayer {
+    
+    /// 設定代理與更新頻率，並初始化音訊引擎
+    /// - Parameters:
+    ///   - delegate: 播放器代理
+    ///   - preferredFrameRateRange: 進度更新的幀率範圍
+    /// - Throws: 當音訊會話或引擎初始化失敗時拋出錯誤
+    func configure(delegate: Delegate, preferredFrameRateRange: CAFrameRateRange = .init(minimum: 5, maximum: 5, preferred: 5)) throws {
+        self.delegate = delegate
+        self.preferredFrameRateRange = preferredFrameRateRange
+        try initAudioEngine()
+    }
     
     /// 播放指定Bundle中的音頻文件列表
     /// - Parameters:
@@ -193,22 +204,34 @@ public extension WWNormalizeAudioPlayer {
 private extension WWNormalizeAudioPlayer {
     
     /// 初始化音樂引擎
-    func initAudioEngine() {
+    func initAudioEngine() throws {
+        
+        let audioSession = AVAudioSession.sharedInstance()
+        
+        do {
+            try audioSession.setCategory(.playback, mode: .default, options: [.mixWithOthers, .allowBluetoothA2DP, .allowAirPlay])
+            try audioSession.setActive(true)
+        } catch {
+            throw CustomError.audioSessionConfigurationFailed
+        }
         
         let audioEngine = AVAudioEngine()
         let playerNode = AVAudioPlayerNode()
-        let equalizerNode = AVAudioUnitEQ(numberOfBands: 1)
+        let equalizer = WWNormalizeAudioPlayer.Equalizer()
         
         self.audioEngine = audioEngine
         self.playerNode = playerNode
-        self.equalizerNode = equalizerNode
+        self.equalizer = equalizer
         
         audioEngine.attach(playerNode)
-        audioEngine.attach(equalizerNode)
-
-        audioEngine.connect(playerNode, to: equalizerNode, format: nil)
-        audioEngine.connect(equalizerNode, to: audioEngine.mainMixerNode, format: nil)
-
+        audioEngine.attach(equalizer.equalizer)
+        
+        audioEngine.connect(playerNode, to: equalizer.equalizer, format: nil)
+        audioEngine.connect(equalizer.equalizer, to: audioEngine.mainMixerNode, format: nil)
+        
+        equalizer.setEnabled(true)
+        equalizer.reset()
+        
         audioEngine.prepare()
     }
     
@@ -220,21 +243,17 @@ private extension WWNormalizeAudioPlayer {
     func playAudio(url: URL, targetDB: Float?, callbackType: AVAudioPlayerNodeCompletionCallbackType) async throws -> AVAudioPlayerNodeCompletionCallbackType {
         
         guard let audioEngine,
-              let playerNode,
-              let equalizerNode
+              let playerNode
         else {
             throw CustomError.playerNodeNotReady
         }
-                
+        
         if !audioEngine.isRunning { try audioEngine.start() }
         
         let audioFile = try AVAudioFile(forReading: url)
         self.audioFile = audioFile
         
-        if let targetDB {
-            let gain = try normalizeGain(audioFile: audioFile, target: targetDB)
-            equalizerNode.globalGain = gain
-        }
+        if let targetDB { try equalizer.normalizationGain(of: audioFile, targetDB: targetDB) }
         
         return try await playAudioFile(audioFile: audioFile, playerNode: playerNode, callbackType: callbackType)
     }
@@ -265,18 +284,7 @@ private extension WWNormalizeAudioPlayer {
         }
     }
     
-    /// 正規化音量
-    /// - Parameters:
-    ///   - audioFile: 音樂檔
-    ///   - target: 目標值
-    /// - Returns: Result<Float, Error>
-    func normalizeGain(audioFile: AVAudioFile, target targetDB: Float) throws -> Float {
-        
-        let rmsDB = try audioFile.analyzeChannelRMS()
-        return powf(10, (targetDB - rmsDB) / 20)
-    }
-    
-    /// 取得目前曲目的已播放時間（秒）。
+    /// 取得目前曲目的已播放時間（秒）
     func currentTrackTime() throws -> TimeInterval {
         
         guard let playerNode,
@@ -290,13 +298,13 @@ private extension WWNormalizeAudioPlayer {
         return max(0, min(seconds, currentTrackTotalTime()))
     }
     
-    /// 取得目前曲目的總長度（秒）。
+    /// 取得目前曲目的總長度（秒）
     func currentTrackTotalTime() -> TimeInterval {
         guard let audioFile else { return 0 }
         return Double(audioFile.length) / audioFile.fileFormat.sampleRate
     }
 
-    /// 取得整個播放清單目前已播放的時間（秒）。
+    /// 取得整個播放清單目前已播放的時間（秒）
     func currentTime() throws -> TimeInterval {
         return completedTracksDuration + (try currentTrackTime())
     }

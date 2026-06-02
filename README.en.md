@@ -36,7 +36,7 @@ It is useful when you want to play multiple audio tracks in sequence without sud
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.4.0"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.4.2"))
 ]
 ```
 
@@ -53,7 +53,8 @@ let player = WWNormalizeAudioPlayer()
 let filenames = ["do-re-mi-re-do.m4a", "audio.mp3"]
 
 Task {
-    try await player.play(filenames: filenames)
+    try audioPlayer.configure(delegate: self)
+    await audioPlayer.play(filenames: filenames)
 }
 ```
 
@@ -66,7 +67,8 @@ let urls: [URL] = [
 ]
 
 Task {
-    try await player.play(with: urls, targetDB: -14)
+    try audioPlayer.configure(delegate: self)
+    await audioPlayer.play(filenames: filenames)
 }
 ```
 
@@ -76,9 +78,7 @@ Task {
 
 | Property | Description |
 |---|---|
-| `delegate` | `WWNormalizeAudioPlayer.Delegate`, used to receive progress, completion, and error callbacks. |
 | `volume` | Adjusts the player volume, ranging from `0.0 ~ 1.0`. |
-| `preferredFrameRateRange` | Sets the update frame rate for progress callbacks. |
 
 ---
 
@@ -86,6 +86,7 @@ Task {
 
 | Method | Description |
 |---|---|
+| `configure(delegate:preferredFrameRateRange:)` | Configures the delegate and update rate, then initializes the audio engine. |
 | `play(at:filenames:targetDB:callbackType:loop:shuffle:)` | Play a list of audio files from a specific `Bundle`. |
 | `play(with:targetDB:callbackType:loop:shuffle:)` | Play an array of audio URLs with sequential playback and volume normalization. |
 | `totalTime()` | Calculate the total duration of all audio files in seconds. |
@@ -131,7 +132,7 @@ final class ViewController: UIViewController {
         super.viewDidLoad()
         
         Task {
-            audioPlayer.delegate = self
+            try audioPlayer.configure(delegate: self)
             await audioPlayer.play(filenames: filenames)
         }
     }

@@ -11,17 +11,13 @@ import Accelerate
 // MARK: - AVAudioFile
 extension AVAudioFile {
     
-    /// 分析檔案最大音量的RMS分貝值 (DB)
-    /// - Returns: Result<Float, Error>
-    func analyzeChannelRMS(`default`: Float = -100) throws -> Float {
+    /// 根據目標分貝值計算需要補多少增益
+    /// - Parameter targetDB: 目標分貝值
+    /// - Returns: 建議套用的增益值（dB）
+    func normalizationGain(targetDB: Float) throws -> Float {
         
-        let rms = try channelRMS()
-        
-        
-        var rmsDB: Float = `default`
-        
-        if let rms = rms, rms > 0 { rmsDB = 20 * log10(rms) }
-        return rmsDB
+        let currentDB = try analyzeChannelRMS()
+        return targetDB - currentDB
     }
 }
 
@@ -39,6 +35,17 @@ private extension AVAudioFile {
         self.framePosition = framePosition
         
         try read(into: buffer, frameCount: capacity)
+    }
+    
+    /// 分析檔案最大音量的RMS分貝值 (DB)
+    /// - Returns: Result<Float, Error>
+    func analyzeChannelRMS(`default`: Float = -100) throws -> Float {
+        
+        let rms = try channelRMS()
+        var rmsDB: Float = `default`
+        
+        if let rms = rms, rms > 0 { rmsDB = 20 * log10(rms) }
+        return rmsDB
     }
     
     /// 分析檔案最大音量的RMS值
