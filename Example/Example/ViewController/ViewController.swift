@@ -19,7 +19,7 @@ final class ViewController: UIViewController {
         
         Task {
             audioPlayer.delegate = self
-            await audioPlayer.play(filenames: filenames, loop: true, shuffle: true)
+            await audioPlayer.play(filenames: filenames)
         }
     }
 }
