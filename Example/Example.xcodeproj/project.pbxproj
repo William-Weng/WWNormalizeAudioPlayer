@@ -19,6 +19,7 @@
 		81407EE72F3B2D28007385CF /* WWNormalizeAudioPlayer in Frameworks */ = {isa = PBXBuildFile; productRef = 81407EE62F3B2D28007385CF /* WWNormalizeAudioPlayer */; };
 		81407EED2F3B3144007385CF /* WWNormalizeAudioPlayer in Frameworks */ = {isa = PBXBuildFile; productRef = 81407EEC2F3B3144007385CF /* WWNormalizeAudioPlayer */; };
 		81519D2E2FCD8AC7009FD514 /* WWNormalizeAudioPlayer in Frameworks */ = {isa = PBXBuildFile; productRef = 81519D2D2FCD8AC7009FD514 /* WWNormalizeAudioPlayer */; };
+		815C87A42FCFD66800232F75 /* WWNormalizeAudioPlayer in Frameworks */ = {isa = PBXBuildFile; productRef = 815C87A32FCFD66800232F75 /* WWNormalizeAudioPlayer */; };
 		8163FF592F3B0359006D9FEF /* WWNormalizeAudioPlayer in Frameworks */ = {isa = PBXBuildFile; productRef = 8163FF582F3B0359006D9FEF /* WWNormalizeAudioPlayer */; };
 		8163FF5F2F3B0CB6006D9FEF /* WWNormalizeAudioPlayer in Frameworks */ = {isa = PBXBuildFile; productRef = 8163FF5E2F3B0CB6006D9FEF /* WWNormalizeAudioPlayer */; };
 		817D6E802FCFD5750076FF61 /* WWNormalizeAudioPlayer in Frameworks */ = {isa = PBXBuildFile; productRef = 817D6E7F2FCFD5750076FF61 /* WWNormalizeAudioPlayer */; };
@@ -82,6 +83,7 @@
 				3D5C905A2F4132FF007BA966 /* WWNormalizeAudioPlayer in Frameworks */,
 				81E5DF3C2FCEB96A000B02BB /* WWNormalizeAudioPlayer in Frameworks */,
 				81407EA62F3B1FDA007385CF /* WWNormalizeAudioPlayer in Frameworks */,
+				815C87A42FCFD66800232F75 /* WWNormalizeAudioPlayer in Frameworks */,
 				81407EE12F3B2C22007385CF /* WWNormalizeAudioPlayer in Frameworks */,
 				81519D2E2FCD8AC7009FD514 /* WWNormalizeAudioPlayer in Frameworks */,
 				81E5DF422FCED173000B02BB /* WWNormalizeAudioPlayer in Frameworks */,
@@ -150,6 +152,7 @@
 				81E5DF4D2FCED6AB000B02BB /* WWNormalizeAudioPlayer */,
 				81E5DF532FCEDA4E000B02BB /* WWNormalizeAudioPlayer */,
 				817D6E7F2FCFD5750076FF61 /* WWNormalizeAudioPlayer */,
+				815C87A32FCFD66800232F75 /* WWNormalizeAudioPlayer */,
 			);
 			productName = Example;
 			productReference = 817EE1FE2EB1FA050036B57C /* Example.app */;
@@ -180,7 +183,7 @@
 			mainGroup = 817EE1F52EB1FA050036B57C;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				817D6E7E2FCFD5750076FF61 /* XCLocalSwiftPackageReference "../../@WWNormalizeAudioPlayer" */,
+				815C87A22FCFD66800232F75 /* XCRemoteSwiftPackageReference "WWNormalizeAudioPlayer" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 817EE1FF2EB1FA050036B57C /* Products */;
@@ -423,12 +426,16 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		817D6E7E2FCFD5750076FF61 /* XCLocalSwiftPackageReference "../../@WWNormalizeAudioPlayer" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = "../../@WWNormalizeAudioPlayer";
+/* Begin XCRemoteSwiftPackageReference section */
+		815C87A22FCFD66800232F75 /* XCRemoteSwiftPackageReference "WWNormalizeAudioPlayer" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/William-Weng/WWNormalizeAudioPlayer";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 1.5.0;
+			};
 		};
-/* End XCLocalSwiftPackageReference section */
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		3D5208F12F40722C002F6EBA /* WWNormalizeAudioPlayer */ = {
@@ -477,6 +484,11 @@
 		};
 		81519D2D2FCD8AC7009FD514 /* WWNormalizeAudioPlayer */ = {
 			isa = XCSwiftPackageProductDependency;
+			productName = WWNormalizeAudioPlayer;
+		};
+		815C87A32FCFD66800232F75 /* WWNormalizeAudioPlayer */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 815C87A22FCFD66800232F75 /* XCRemoteSwiftPackageReference "WWNormalizeAudioPlayer" */;
 			productName = WWNormalizeAudioPlayer;
 		};
 		8163FF582F3B0359006D9FEF /* WWNormalizeAudioPlayer */ = {
