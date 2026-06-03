@@ -36,7 +36,7 @@ It is useful when you want to play multiple audio tracks in sequence without sud
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.4.3"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.0"))
 ]
 ```
 
@@ -80,6 +80,7 @@ Task {
 |---|---|
 | `equalizer` | Audio equalizer wrapper. |
 | `volume` | Adjusts the player volume, ranging from `0.0 ~ 1.0`. |
+| `audioNode` | The node representing the currently playing audio, suitable for installing a tap to capture real-time audio data. |
 
 ---
 
@@ -141,12 +142,12 @@ final class ViewController: UIViewController {
 
 extension ViewController: WWNormalizeAudioPlayer.Delegate {
     
-    func audioPlayer(_ player: WWNormalizeAudioPlayer, trackIndex: Int, currentTime: TimeInterval, tracTime: TimeInterval) {
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, trackIndex: Int, currentTime: TimeInterval, trackTime: TimeInterval) {
         
         let totalTime = player.totalTime()
         let audio = filenames[trackIndex]
         
-        print("time (\(audio)) = \(currentTime) of \(tracTime) - \(totalTime)")
+        print("time (\(audio)) = \(currentTime) of \(trackTime) - \(totalTime)")
     }
     
     func audioPlayer(_ player: WWNormalizeAudioPlayer, didFinishTrackIndex trackIndex: Int, callbackType: AVAudioPlayerNodeCompletionCallbackType) {

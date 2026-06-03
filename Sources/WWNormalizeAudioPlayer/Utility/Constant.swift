@@ -10,7 +10,8 @@ import Foundation
 // MARK: - typealias
 public extension WWNormalizeAudioPlayer {
     
-    typealias SpectrumBarsHandler = ([SpectrumBar]) -> Void    /// 頻譜分析結果的 callback
+    // 原始頻帶資料分析完成後的回呼型別
+    typealias SpectrumRawBandsHandler = ([SpectrumBandRaw]) -> Void
 }
 
 // MARK: - enum

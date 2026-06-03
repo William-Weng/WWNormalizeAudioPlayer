@@ -36,7 +36,7 @@
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.4.3"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.0"))
 ]
 ```
 
@@ -80,6 +80,7 @@ Task {
 |---|---|
 | `equalizer` | 音訊等化器封裝。 |
 | `volume` | 調整播放器音量，範圍為 `0.0 ~ 1.0`。 |
+| `audioNode` | 目前播放音訊所對應的節點，可用於安裝 tap 取得即時音訊資料。 |
 
 ---
 
@@ -141,12 +142,12 @@ final class ViewController: UIViewController {
 
 extension ViewController: WWNormalizeAudioPlayer.Delegate {
     
-    func audioPlayer(_ player: WWNormalizeAudioPlayer, trackIndex: Int, currentTime: TimeInterval, tracTime: TimeInterval) {
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, trackIndex: Int, currentTime: TimeInterval, trackTime: TimeInterval) {
         
         let totalTime = player.totalTime()
         let audio = filenames[trackIndex]
         
-        print("time (\(audio)) = \(currentTime) of \(tracTime) - \(totalTime)")
+        print("time (\(audio)) = \(currentTime) of \(trackTime) - \(totalTime)")
     }
     
     func audioPlayer(_ player: WWNormalizeAudioPlayer, didFinishTrackIndex trackIndex: Int, callbackType: AVAudioPlayerNodeCompletionCallbackType) {

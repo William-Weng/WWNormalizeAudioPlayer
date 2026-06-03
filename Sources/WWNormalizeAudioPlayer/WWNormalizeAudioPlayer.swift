@@ -45,6 +45,7 @@ public extension WWNormalizeAudioPlayer {
         set { audioEngine?.mainMixerNode.outputVolume = newValue }
     }
     
+    /// AVAudioUnitEQ 實例
     var audioNode: AVAudioUnitEQ {
         equalizer.audioNode
     }
