@@ -92,7 +92,7 @@ public extension WWNormalizeAudioPlayer {
         
         stop()
         
-        guard !audioURLs.isEmpty else { return }
+        guard !audioURLs.isEmpty else {  delegate?.audioPlayer(self, error: CustomError.isEmptyFile); return }
         
         self.audioURLs = audioURLs
         self.isLoop = loop
@@ -104,6 +104,8 @@ public extension WWNormalizeAudioPlayer {
             
             currentTrackIndex = 0
             completedTracksDuration = 0
+            
+            delegate?.audioPlayer(self, didStartTracks: playURLs, totalDuration: totalTime())
             
             for url in playURLs {
                 
@@ -125,18 +127,6 @@ public extension WWNormalizeAudioPlayer {
             }
             
         } while isLoop && playbackState == .playing
-    }
-    
-    /// 計算所有音頻文件的總播放時長（單位：秒）
-    /// - Returns: 總時長（TimeInterval），如果沒有音頻文件則返回 -1
-    func totalTime() -> TimeInterval {
-        
-        guard !audioURLs.isEmpty else { return -1 }
-        
-        return audioURLs.reduce(0) { total, url in
-            guard let file = try? AVAudioFile(forReading: url) else { return total }
-            return total + Double(file.length) / file.fileFormat.sampleRate
-        }
     }
     
     /// 停止播放並重置狀態
@@ -290,6 +280,18 @@ private extension WWNormalizeAudioPlayer {
             
             playerNode.play()
             startTimer()
+        }
+    }
+    
+    /// 計算所有音頻文件的總播放時長（單位：秒）
+    /// - Returns: 總時長（TimeInterval），如果沒有音頻文件則返回 -1
+    func totalTime() -> TimeInterval {
+        
+        guard !audioURLs.isEmpty else { return -1 }
+        
+        return audioURLs.reduce(0) { total, url in
+            guard let file = try? AVAudioFile(forReading: url) else { return total }
+            return total + Double(file.length) / file.fileFormat.sampleRate
         }
     }
     

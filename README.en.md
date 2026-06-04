@@ -36,7 +36,7 @@ It is useful when you want to play multiple audio tracks in sequence without sud
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.0"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.1"))
 ]
 ```
 
@@ -91,7 +91,6 @@ Task {
 | `configure(delegate:preferredFrameRateRange:)` | Configures the delegate and update rate, then initializes the audio engine. |
 | `play(at:filenames:targetDB:callbackType:loop:shuffle:)` | Play a list of audio files from a specific `Bundle`. |
 | `play(with:targetDB:callbackType:loop:shuffle:)` | Play an array of audio URLs with sequential playback and volume normalization. |
-| `totalTime()` | Calculate the total duration of all audio files in seconds. |
 | `stop()` | Stop playback and reset the player state. |
 | `resume()` | Resume playback from the paused position. |
 | `pause()` | Pause playback while keeping the current position. |
@@ -112,6 +111,7 @@ Task {
 
 | Method | Description |
 |---|---|
+| `audioPlayer(_:trackIndex:didStartTracks:totalDuration:)` | Called when the audio player starts playing a set of tracks. |
 | `audioPlayer(_:trackIndex:currentTime:tracTime:)` | Called when playback progress updates. |
 | `audioPlayer(_:didFinishTrackIndex:callbackType:)` | Called when a track finishes playing. |
 | `audioPlayer(_:error:)` | Called when an error occurs during playback. |
@@ -142,16 +142,17 @@ final class ViewController: UIViewController {
 
 extension ViewController: WWNormalizeAudioPlayer.Delegate {
     
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, didStartTracks tracks: [URL], totalDuration: TimeInterval) {
+        tracks.forEach { print($0) }
+        print("totalDuration = \(totalDuration)")
+    }
+    
     func audioPlayer(_ player: WWNormalizeAudioPlayer, trackIndex: Int, currentTime: TimeInterval, trackTime: TimeInterval) {
-        
-        let totalTime = player.totalTime()
         let audio = filenames[trackIndex]
-        
-        print("time (\(audio)) = \(currentTime) of \(trackTime) - \(totalTime)")
+        print("time (\(audio)) = \(currentTime) of \(trackTime)")
     }
     
     func audioPlayer(_ player: WWNormalizeAudioPlayer, didFinishTrackIndex trackIndex: Int, callbackType: AVAudioPlayerNodeCompletionCallbackType) {
-        
         let audio = filenames[trackIndex]
         print("finish = \(audio)")
     }

@@ -26,16 +26,17 @@ final class ViewController: UIViewController {
 
 extension ViewController: WWNormalizeAudioPlayer.Delegate {
     
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, didStartTracks tracks: [URL], totalDuration: TimeInterval) {
+        tracks.forEach { print($0) }
+        print("totalDuration = \(totalDuration)")
+    }
+    
     func audioPlayer(_ player: WWNormalizeAudioPlayer, trackIndex: Int, currentTime: TimeInterval, trackTime: TimeInterval) {
-        
-        let totalTime = player.totalTime()
         let audio = filenames[trackIndex]
-        
-        print("time (\(audio)) = \(currentTime) of \(trackTime) - \(totalTime)")
+        print("time (\(audio)) = \(currentTime) of \(trackTime)")
     }
     
     func audioPlayer(_ player: WWNormalizeAudioPlayer, didFinishTrackIndex trackIndex: Int, callbackType: AVAudioPlayerNodeCompletionCallbackType) {
-        
         let audio = filenames[trackIndex]
         print("finish = \(audio)")
     }

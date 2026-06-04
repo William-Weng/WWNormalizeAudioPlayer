@@ -36,7 +36,7 @@
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.0"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.1"))
 ]
 ```
 
@@ -91,7 +91,6 @@ Task {
 | `configure(delegate:preferredFrameRateRange:)` | 設定代理與更新頻率，並初始化音訊引擎。 |
 | `play(at:filenames:targetDB:callbackType:loop:shuffle:)` | 播放指定 `Bundle` 中的音訊檔案列表。 |
 | `play(with:targetDB:callbackType:loop:shuffle:)` | 播放音訊 URL 陣列，支援順序播放與音量正規化。 |
-| `totalTime()` | 計算所有音訊檔案的總播放時間（秒）。 |
 | `stop()` | 停止播放並重置狀態。 |
 | `resume()` | 從暫停狀態繼續播放。 |
 | `pause()` | 暫停播放並保留目前進度。 |
@@ -112,6 +111,7 @@ Task {
 
 | 方法 | 說明 |
 |---|---|
+| `audioPlayer(_:trackIndex:didStartTracks:totalDuration:)` | 當音訊播放器開始播放一組音軌時呼叫。 |
 | `audioPlayer(_:trackIndex:currentTime:tracTime:)` | 音訊播放進度更新時呼叫。 |
 | `audioPlayer(_:didFinishTrackIndex:callbackType:)` | 單一軌道播放完成時呼叫。 |
 | `audioPlayer(_:error:)` | 播放過程發生錯誤時呼叫。 |
@@ -142,16 +142,17 @@ final class ViewController: UIViewController {
 
 extension ViewController: WWNormalizeAudioPlayer.Delegate {
     
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, didStartTracks tracks: [URL], totalDuration: TimeInterval) {
+        tracks.forEach { print($0) }
+        print("totalDuration = \(totalDuration)")
+    }
+    
     func audioPlayer(_ player: WWNormalizeAudioPlayer, trackIndex: Int, currentTime: TimeInterval, trackTime: TimeInterval) {
-        
-        let totalTime = player.totalTime()
         let audio = filenames[trackIndex]
-        
-        print("time (\(audio)) = \(currentTime) of \(trackTime) - \(totalTime)")
+        print("time (\(audio)) = \(currentTime) of \(trackTime)")
     }
     
     func audioPlayer(_ player: WWNormalizeAudioPlayer, didFinishTrackIndex trackIndex: Int, callbackType: AVAudioPlayerNodeCompletionCallbackType) {
-        
         let audio = filenames[trackIndex]
         print("finish = \(audio)")
     }
