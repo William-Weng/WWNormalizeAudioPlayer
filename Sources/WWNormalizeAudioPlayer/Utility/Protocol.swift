@@ -12,6 +12,7 @@ public extension WWNormalizeAudioPlayer {
     
     /// WWNormalizeAudioPlayer 的代理協議，用於通知播放狀態、進度與錯誤
     /// - Note: 使用 `AnyObject` 限制為類別協議，支援弱引用避免循環引用
+    @MainActor
     protocol Delegate: AnyObject {
         
         /// 當音訊播放器開始播放一組音軌時呼叫

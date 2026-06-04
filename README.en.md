@@ -36,7 +36,7 @@ It is useful when you want to play multiple audio tracks in sequence without sud
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.1"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.2"))
 ]
 ```
 

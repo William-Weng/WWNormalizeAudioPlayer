@@ -92,7 +92,7 @@ public extension WWNormalizeAudioPlayer {
         
         stop()
         
-        guard !audioURLs.isEmpty else {  delegate?.audioPlayer(self, error: CustomError.isEmptyFile); return }
+        guard !audioURLs.isEmpty else {  await delegate?.audioPlayer(self, error: CustomError.isEmptyFile); return }
         
         self.audioURLs = audioURLs
         self.isLoop = loop
@@ -105,7 +105,7 @@ public extension WWNormalizeAudioPlayer {
             currentTrackIndex = 0
             completedTracksDuration = 0
             
-            delegate?.audioPlayer(self, didStartTracks: playURLs, totalDuration: totalTime())
+            await delegate?.audioPlayer(self, didStartTracks: playURLs, totalDuration: totalTime())
             
             for url in playURLs {
                 
@@ -116,11 +116,11 @@ public extension WWNormalizeAudioPlayer {
                 do {
                     let completionType = try await playAudio(url: url, targetDB: targetDB, callbackType: callbackType)
 
-                    delegate?.audioPlayer(self, didFinishTrackIndex: trackIndex, callbackType: completionType)
+                    await delegate?.audioPlayer(self, didFinishTrackIndex: trackIndex, callbackType: completionType)
                     completedTracksDuration += currentTrackTotalTime()
 
                 } catch {
-                    delegate?.audioPlayer(self, error: error)
+                    await delegate?.audioPlayer(self, error: error)
                 }
                 
                 currentTrackIndex += 1
@@ -143,6 +143,7 @@ public extension WWNormalizeAudioPlayer {
     }
     
     /// 恢復播放（從暫停狀態繼續）
+    @MainActor
     func resume() {
         
         guard playbackState == .paused else { return }
@@ -181,6 +182,7 @@ public extension WWNormalizeAudioPlayer {
     /// 更新播放進度時間
     /// - Parameter displayLink: 由 CADisplayLink 觸發的更新回呼
     /// - Note: 此方法通常用於定期刷新目前播放時間並通知 delegate
+    @MainActor
     func updatePlayTime(_ displayLink: CADisplayLink) {
         
         do {
