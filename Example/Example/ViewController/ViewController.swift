@@ -18,7 +18,7 @@ final class ViewController: UIViewController {
         super.viewDidLoad()
         
         Task {
-            try audioPlayer.configure(delegate: self)
+            audioPlayer.configure(delegate: self)
             await audioPlayer.play(filenames: filenames)
         }
     }
@@ -28,7 +28,7 @@ extension ViewController: WWNormalizeAudioPlayer.Delegate {
     
     func audioPlayer(_ player: WWNormalizeAudioPlayer, didStartTracks tracks: [URL], totalDuration: TimeInterval) {
         tracks.forEach { print($0) }
-        print("totalDuration = \(totalDuration)")
+        print("total = \(totalDuration) sec")
     }
     
     func audioPlayer(_ player: WWNormalizeAudioPlayer, trackIndex: Int, currentTime: TimeInterval, trackTime: TimeInterval) {

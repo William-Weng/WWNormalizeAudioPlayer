@@ -58,11 +58,19 @@ public extension WWNormalizeAudioPlayer {
     /// - Parameters:
     ///   - delegate: 播放器代理
     ///   - preferredFrameRateRange: 進度更新的幀率範圍
+    ///   - options: `AVAudioSession.CategoryOptions`，用來決定音訊會話的行為，例如是否與其他 App 混音、是否允許藍牙輸出、是否預設輸出到喇叭等。
     /// - Throws: 當音訊會話或引擎初始化失敗時拋出錯誤
-    func configure(delegate: Delegate, preferredFrameRateRange: CAFrameRateRange = .init(minimum: 5, maximum: 5, preferred: 5)) throws {
+    @MainActor
+    func configure(delegate: Delegate?, preferredFrameRateRange: CAFrameRateRange = .init(minimum: 5, maximum: 5, preferred: 5), options: AVAudioSession.CategoryOptions = []) {
+        
         self.delegate = delegate
         self.preferredFrameRateRange = preferredFrameRateRange
-        try initAudioEngine()
+        
+        do {
+            try initAudioEngine(options: options)
+        } catch {
+            delegate?.audioPlayer(self, error: error)
+        }
     }
     
     /// 播放指定Bundle中的音頻文件列表
@@ -202,12 +210,13 @@ public extension WWNormalizeAudioPlayer {
 private extension WWNormalizeAudioPlayer {
     
     /// 初始化音樂引擎
-    func initAudioEngine() throws {
+    /// - Parameter options: AVAudioSession.CategoryOptions
+    func initAudioEngine(options: AVAudioSession.CategoryOptions) throws {
         
         let audioSession = AVAudioSession.sharedInstance()
         
         do {
-            try audioSession.setCategory(.playback, mode: .default, options: [.mixWithOthers, .allowBluetoothA2DP, .allowAirPlay])
+            try audioSession.setCategory(.playback, mode: .default, options: options)
             try audioSession.setActive(true)
         } catch {
             throw CustomError.audioSessionConfigurationFailed
@@ -222,9 +231,9 @@ private extension WWNormalizeAudioPlayer {
         audioEngine.attach(playerNode)
         audioEngine.attach(equalizer.audioNode)
         
-        audioEngine.connect(playerNode, to: equalizer.audioNode, format: nil)
         audioEngine.connect(equalizer.audioNode, to: audioEngine.mainMixerNode, format: nil)
-        
+        audioEngine.connect(playerNode, to: equalizer.audioNode, format: nil)
+
         equalizer.setEnabled(true)
         equalizer.reset()
         

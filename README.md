@@ -36,7 +36,7 @@
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.2"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.3"))
 ]
 ```
 
@@ -88,7 +88,7 @@ Task {
 
 | 方法 | 說明 |
 |---|---|
-| `configure(delegate:preferredFrameRateRange:)` | 設定代理與更新頻率，並初始化音訊引擎。 |
+| `configure(delegate:preferredFrameRateRange:options:)` | 設定代理與更新頻率，並初始化音訊引擎。 |
 | `play(at:filenames:targetDB:callbackType:loop:shuffle:)` | 播放指定 `Bundle` 中的音訊檔案列表。 |
 | `play(with:targetDB:callbackType:loop:shuffle:)` | 播放音訊 URL 陣列，支援順序播放與音量正規化。 |
 | `stop()` | 停止播放並重置狀態。 |
@@ -134,7 +134,7 @@ final class ViewController: UIViewController {
         super.viewDidLoad()
         
         Task {
-            try audioPlayer.configure(delegate: self)
+            audioPlayer.configure(delegate: self)
             await audioPlayer.play(filenames: filenames)
         }
     }
@@ -144,7 +144,7 @@ extension ViewController: WWNormalizeAudioPlayer.Delegate {
     
     func audioPlayer(_ player: WWNormalizeAudioPlayer, didStartTracks tracks: [URL], totalDuration: TimeInterval) {
         tracks.forEach { print($0) }
-        print("totalDuration = \(totalDuration)")
+        print("total = \(totalDuration) sec")
     }
     
     func audioPlayer(_ player: WWNormalizeAudioPlayer, trackIndex: Int, currentTime: TimeInterval, trackTime: TimeInterval) {

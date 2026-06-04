@@ -36,7 +36,7 @@ It is useful when you want to play multiple audio tracks in sequence without sud
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.2"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.3"))
 ]
 ```
 
@@ -88,7 +88,7 @@ Task {
 
 | Method | Description |
 |---|---|
-| `configure(delegate:preferredFrameRateRange:)` | Configures the delegate and update rate, then initializes the audio engine. |
+| `configure(delegate:preferredFrameRateRange:options:)` | Configures the delegate and update rate, then initializes the audio engine. |
 | `play(at:filenames:targetDB:callbackType:loop:shuffle:)` | Play a list of audio files from a specific `Bundle`. |
 | `play(with:targetDB:callbackType:loop:shuffle:)` | Play an array of audio URLs with sequential playback and volume normalization. |
 | `stop()` | Stop playback and reset the player state. |
@@ -134,7 +134,7 @@ final class ViewController: UIViewController {
         super.viewDidLoad()
         
         Task {
-            try audioPlayer.configure(delegate: self)
+            audioPlayer.configure(delegate: self)
             await audioPlayer.play(filenames: filenames)
         }
     }
@@ -144,7 +144,7 @@ extension ViewController: WWNormalizeAudioPlayer.Delegate {
     
     func audioPlayer(_ player: WWNormalizeAudioPlayer, didStartTracks tracks: [URL], totalDuration: TimeInterval) {
         tracks.forEach { print($0) }
-        print("totalDuration = \(totalDuration)")
+        print("total = \(totalDuration) sec")
     }
     
     func audioPlayer(_ player: WWNormalizeAudioPlayer, trackIndex: Int, currentTime: TimeInterval, trackTime: TimeInterval) {
