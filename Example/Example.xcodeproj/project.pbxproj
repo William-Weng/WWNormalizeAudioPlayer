@@ -447,7 +447,7 @@
 			repositoryURL = "https://github.com/William-Weng/WWNormalizeAudioPlayer";
 			requirement = {
 				kind = upToNextMinorVersion;
-				minimumVersion = 1.5.3;
+				minimumVersion = 1.5.4;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
