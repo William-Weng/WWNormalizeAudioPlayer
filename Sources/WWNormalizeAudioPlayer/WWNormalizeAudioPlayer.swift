@@ -13,6 +13,8 @@ open class WWNormalizeAudioPlayer {
     
     public let equalizer: Equalizer = .init()
     
+    public var isLoop: Bool = false
+    
     private weak var delegate: Delegate?
     
     private var preferredFrameRateRange: CAFrameRateRange = .init(minimum: 5, maximum: 5)
@@ -23,7 +25,6 @@ open class WWNormalizeAudioPlayer {
     private var currentTrackIndex: Int = 0
     private var audioURLs: [URL] = []
     private var completedTracksDuration: TimeInterval = 0
-    private var isLoop: Bool = false
     private var playbackState: PlaybackState = .idle
     
     private weak var displayLink: CADisplayLink?

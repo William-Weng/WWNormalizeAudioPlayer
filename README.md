@@ -36,7 +36,7 @@
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.3"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.4"))
 ]
 ```
 
@@ -81,6 +81,7 @@ Task {
 | `equalizer` | 音訊等化器封裝。 |
 | `volume` | 調整播放器音量，範圍為 `0.0 ~ 1.0`。 |
 | `audioNode` | 目前播放音訊所對應的節點，可用於安裝 tap 取得即時音訊資料。 |
+| `isLoop` | 循環播放開關。 |
 
 ---
 

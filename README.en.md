@@ -36,7 +36,7 @@ It is useful when you want to play multiple audio tracks in sequence without sud
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.3"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.4"))
 ]
 ```
 
@@ -81,6 +81,7 @@ Task {
 | `equalizer` | Audio equalizer wrapper. |
 | `volume` | Adjusts the player volume, ranging from `0.0 ~ 1.0`. |
 | `audioNode` | The node representing the currently playing audio, suitable for installing a tap to capture real-time audio data. |
+| `isLoop` | Loop playback toggle. |
 
 ---
 
