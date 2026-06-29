@@ -1,4 +1,4 @@
-# WWNormalizeAudioPlayer
+# [WWNormalizeAudioPlayer](https://swiftpackageindex.com/William-Weng)
 
 [![Swift-5.7](https://img.shields.io/badge/Swift-5.7-orange.svg?style=flat)](https://developer.apple.com/swift/)
 [![iOS-16.0](https://img.shields.io/badge/iOS-16.0-pink.svg?style=flat)](https://developer.apple.com/swift/)
@@ -36,7 +36,7 @@
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.4"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.5"))
 ]
 ```
 
@@ -95,6 +95,7 @@ Task {
 | `stop()` | 停止播放並重置狀態。 |
 | `resume()` | 從暫停狀態繼續播放。 |
 | `pause()` | 暫停播放並保留目前進度。 |
+| `trackTime(with:)` | 取得該音軌聲音的時間長度 (秒)。 |
 
 ---
 

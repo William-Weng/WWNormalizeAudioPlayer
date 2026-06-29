@@ -54,7 +54,7 @@ public extension WWNormalizeAudioPlayer {
 
 // MARK: - 公開函式
 public extension WWNormalizeAudioPlayer {
-    
+        
     /// 設定代理與更新頻率，並初始化音訊引擎
     /// - Parameters:
     ///   - delegate: 播放器代理
@@ -183,6 +183,14 @@ public extension WWNormalizeAudioPlayer {
     func setLoopEnabled(_ enabled: Bool) {
         isLoop = enabled
     }
+    
+    /// 取得該音軌聲音的時間長度 (秒)
+    /// - Parameter url: URL
+    /// - Returns: TimeInterval
+    func trackTime(with url: URL) throws -> TimeInterval {
+        let file = try AVAudioFile(forReading: url)
+        return Double(file.length) / file.fileFormat.sampleRate
+    }
 }
 
 // MARK: - @objc
@@ -302,8 +310,8 @@ private extension WWNormalizeAudioPlayer {
         guard !audioURLs.isEmpty else { return -1 }
         
         return audioURLs.reduce(0) { total, url in
-            guard let file = try? AVAudioFile(forReading: url) else { return total }
-            return total + Double(file.length) / file.fileFormat.sampleRate
+            let time = try? trackTime(with: url)
+            return total + (time ?? 0)
         }
     }
     
@@ -326,7 +334,7 @@ private extension WWNormalizeAudioPlayer {
         guard let audioFile else { return 0 }
         return Double(audioFile.length) / audioFile.fileFormat.sampleRate
     }
-
+    
     /// 取得整個播放清單目前已播放的時間（秒）
     func currentTime() throws -> TimeInterval {
         return completedTracksDuration + (try currentTrackTime())
@@ -334,6 +342,8 @@ private extension WWNormalizeAudioPlayer {
     
     /// 開始計時
     func startTimer() {
+        
+        guard (delegate != nil) else { return }
         
         stopTimer()
         

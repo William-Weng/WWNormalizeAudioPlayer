@@ -1,4 +1,4 @@
-# WWNormalizeAudioPlayer
+# [WWNormalizeAudioPlayer](https://swiftpackageindex.com/William-Weng)
 
 [![Swift-5.7](https://img.shields.io/badge/Swift-5.7-orange.svg?style=flat)](https://developer.apple.com/swift/)
 [![iOS-16.0](https://img.shields.io/badge/iOS-16.0-pink.svg?style=flat)](https://developer.apple.com/swift/)
@@ -36,7 +36,7 @@ It is useful when you want to play multiple audio tracks in sequence without sud
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.4"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.5"))
 ]
 ```
 
@@ -95,6 +95,7 @@ Task {
 | `stop()` | Stop playback and reset the player state. |
 | `resume()` | Resume playback from the paused position. |
 | `pause()` | Pause playback while keeping the current position. |
+| `trackTime(with:)` | Get the duration of the audio track (in seconds). |
 
 ---
 
