@@ -15,32 +15,38 @@ public extension WWNormalizeAudioPlayer {
     @MainActor
     protocol Delegate: AnyObject {
         
-        /// 當音訊播放器開始播放一組音軌時呼叫
+        /// 告知代理：播放器即將開始準備指定的音軌
+        ///
+        /// 可在此更新播放清單、初始化 UI 狀態，或顯示準備中的提示
         ///
         /// - Parameters:
         ///   - player: 觸發此事件的 `WWNormalizeAudioPlayer` 實例
-        ///   - tracks: 即將開始播放的音軌 URL 陣列（播放清單）
-        ///   - totalDuration: 此次播放所有音軌的總時長（秒）
-        func audioPlayer(_ player: WWNormalizeAudioPlayer, didStartTracks tracks: [URL], totalDuration: TimeInterval)
-        
-        /// 當音頻播放進度更新時呼叫（通常由計時器定期觸發）
+        ///   - tracks: 即將開始播放的音軌資訊陣列
+        func audioPlayer(_ player: WWNormalizeAudioPlayer, prepare tracks: [TrackInformation])
+ 
+        /// 回報目前播放進度
+        ///
+        /// 通常在播放過程中持續回呼，可用來更新進度條、時間標籤或其他播放相關 UI
         ///
         /// - Parameters:
         ///   - player: 播放器實例
-        ///   - trackIndex: 當前播放的軌道索引（從 0 開始）
-        ///   - currentTime: 當前播放位置（單位：秒）
-        ///   - tracTime: 當前軌道的總時長（單位：秒）
-        func audioPlayer(_ player: WWNormalizeAudioPlayer, trackIndex: Int, currentTime: TimeInterval, trackTime: TimeInterval)
+        ///   - currentTime: 當前播放位置，單位為秒
+        ///   - trackTime: 目前音軌的總長度，單位為秒
+        func audioPlayer(_ player: WWNormalizeAudioPlayer, isPlaying currentTime: TimeInterval, trackTime: TimeInterval)
 
-        /// 當單個軌道播放完成時呼叫
-        /// 
+        /// 告知代理：目前音軌已播放完成
+        ///
+        /// 可根據 `callbackType` 判斷是自然播放結束，或是其他完成時機所觸發的回呼
+        ///
         /// - Parameters:
         ///   - player: 播放器實例
-        ///   - trackIndex: 已完成播放的軌道索引
-        ///   - callbackType: 播放完成的回調類型（例如 .dataPlayedBack）
-        func audioPlayer(_ player: WWNormalizeAudioPlayer, didFinishTrackIndex trackIndex: Int, callbackType: AVAudioPlayerNodeCompletionCallbackType)
+        ///   - callbackType: 播放完成的回調類型，例如 `.dataPlayedBack`
+        func audioPlayer(_ player: WWNormalizeAudioPlayer, didFinished callbackType: AVAudioPlayerNodeCompletionCallbackType)
 
         /// 當播放過程中發生錯誤時呼叫
+        ///
+        /// 可在此停止播放、顯示錯誤訊息，或記錄除錯資訊
+        ///
         /// - Parameters:
         ///   - player: 播放器實例
         ///   - error: 發生的錯誤

@@ -13,17 +13,14 @@ open class WWNormalizeAudioPlayer {
     
     public let equalizer: Equalizer = .init()
     
-    public var isLoop: Bool = false
-    
     private weak var delegate: Delegate?
     
+    private var audioURLs: [URL] = []
     private var preferredFrameRateRange: CAFrameRateRange = .init(minimum: 5, maximum: 5)
     private var audioFile: AVAudioFile?
     private var audioEngine: AVAudioEngine?
     private var playerNode: AVAudioPlayerNode?
-
-    private var currentTrackIndex: Int = 0
-    private var audioURLs: [URL] = []
+    
     private var completedTracksDuration: TimeInterval = 0
     private var playbackState: PlaybackState = .idle
     
@@ -54,7 +51,7 @@ public extension WWNormalizeAudioPlayer {
 
 // MARK: - 公開函式
 public extension WWNormalizeAudioPlayer {
-        
+    
     /// 設定代理與更新頻率，並初始化音訊引擎
     /// - Parameters:
     ///   - delegate: 播放器代理
@@ -62,88 +59,45 @@ public extension WWNormalizeAudioPlayer {
     ///   - options: `AVAudioSession.CategoryOptions`，用來決定音訊會話的行為，例如是否與其他 App 混音、是否允許藍牙輸出、是否預設輸出到喇叭等。
     /// - Throws: 當音訊會話或引擎初始化失敗時拋出錯誤
     @MainActor
-    func configure(delegate: Delegate?, preferredFrameRateRange: CAFrameRateRange = .init(minimum: 5, maximum: 5, preferred: 5), options: AVAudioSession.CategoryOptions = []) {
+    func prepare(audioURLs: [URL], delegate: Delegate?, preferredFrameRateRange: CAFrameRateRange = .init(minimum: 5, maximum: 5, preferred: 5), options: AVAudioSession.CategoryOptions = []) {
         
         self.delegate = delegate
         self.preferredFrameRateRange = preferredFrameRateRange
+        self.audioURLs = audioURLs
         
         do {
+            try delegate?.audioPlayer(self, prepare: getTrackInfos())
             try initAudioEngine(options: options)
         } catch {
             delegate?.audioPlayer(self, error: error)
         }
     }
     
-    /// 播放指定Bundle中的音頻文件列表
-    /// - Parameters:
-    ///   - bundle: 資源 Bundle，預設為主要 Bundle (.main)
-    ///   - filenames: 音頻文件名陣列
-    ///   - targetDB: 目標音量分貝值，nil 則不進行音量正規化
-    ///   - callbackType: 播放完成回調類型，預設為 .dataPlayedBack
-    ///   - loop: 是否要循環播放
-    ///   - shuffle: 是否要隨曲播放
-    /// - Throws: 當檔案不存在或播放失敗時丟出錯誤
-    func play(at bundle: Bundle = .main, filenames: [String], targetDB: Float? = nil, callbackType: AVAudioPlayerNodeCompletionCallbackType = .dataPlayedBack, loop: Bool = false, shuffle: Bool = false) async {
-        
-        let urls = filenames.compactMap { bundle.bundleURL.appendingPathComponent($0) }
-        try await play(with: urls, targetDB: targetDB, callbackType: callbackType, loop: loop, shuffle: shuffle)
-    }
-    
     /// 播放音頻 URL 陣列，支援順序播放和音量正規化
     /// - Parameters:
-    ///   - audioURLs: 音頻文件 URL 陣列
+    ///   - index: 從播曲目索引中的哪一首
     ///   - targetDB: 目標音量分貝值，nil 則不進行音量正規化
     ///   - callbackType: 播放完成回調類型，預設為 .dataPlayedBack
     ///   - loop: 是否要循環播放
     ///   - shuffle: 是否要隨曲播放
     /// - Throws: 當音頻檔案無法讀取或播放失敗時丟出錯誤
-    func play(with audioURLs: [URL], targetDB: Float? = nil, callbackType: AVAudioPlayerNodeCompletionCallbackType = .dataPlayedBack, loop: Bool = false, shuffle: Bool = false) async {
+    func play(at index: Int, targetDB: Float? = nil, callbackType: AVAudioPlayerNodeCompletionCallbackType = .dataPlayedBack) async throws {
         
-        stop()
+        guard let url = audioURLs[safe: index] else { throw CustomError.currentIndexUnavailable }
         
-        guard !audioURLs.isEmpty else {  await delegate?.audioPlayer(self, error: CustomError.isEmptyFile); return }
+        let audioFile = try AVAudioFile(forReading: url)
+        self.audioFile = audioFile
         
-        self.audioURLs = audioURLs
-        self.isLoop = loop
-        self.playbackState = .playing
-        
-        repeat {
-            
-            let playURLs = shuffle ? self.audioURLs.shuffled() : self.audioURLs
-            
-            currentTrackIndex = 0
-            completedTracksDuration = 0
-            
-            await delegate?.audioPlayer(self, didStartTracks: playURLs, totalDuration: totalTime())
-            
-            for url in playURLs {
-                
-                guard playbackState == .playing else { return }
-                
-                let trackIndex = currentTrackIndex
-                
-                do {
-                    let completionType = try await playAudio(url: url, targetDB: targetDB, callbackType: callbackType)
-
-                    await delegate?.audioPlayer(self, didFinishTrackIndex: trackIndex, callbackType: completionType)
-                    completedTracksDuration += currentTrackTotalTime()
-
-                } catch {
-                    await delegate?.audioPlayer(self, error: error)
-                }
-                
-                currentTrackIndex += 1
-            }
-            
-        } while isLoop && playbackState == .playing
+        let completionType = try await playAudio(audioFile: audioFile, targetDB: targetDB, callbackType: callbackType)
+        await stop()
+        await delegate?.audioPlayer(self, didFinished: completionType)
     }
     
     /// 停止播放並重置狀態
+    @MainActor
     func stop() {
         
-        isLoop = false
         playbackState = .stopped
-        currentTrackIndex = 0
         completedTracksDuration = 0
         
         playerNode?.stop()
@@ -177,20 +131,6 @@ public extension WWNormalizeAudioPlayer {
         audioEngine?.pause()
         stopTimer()
     }
-    
-    /// 設定是否要循環播放
-    /// - Parameter enabled: 循環播放
-    func setLoopEnabled(_ enabled: Bool) {
-        isLoop = enabled
-    }
-    
-    /// 取得該音軌聲音的時間長度 (秒)
-    /// - Parameter url: URL
-    /// - Returns: TimeInterval
-    func trackTime(with url: URL) throws -> TimeInterval {
-        let file = try AVAudioFile(forReading: url)
-        return Double(file.length) / file.fileFormat.sampleRate
-    }
 }
 
 // MARK: - @objc
@@ -203,12 +143,9 @@ public extension WWNormalizeAudioPlayer {
     func updatePlayTime(_ displayLink: CADisplayLink) {
         
         do {
+            let currentTime = try currentTrackTime()
             let trackTime = currentTrackTotalTime()
-            let currentTime = try currentTime()
-            
-            if currentTrackIndex >= audioURLs.count { stop() }
-            delegate?.audioPlayer(self, trackIndex: currentTrackIndex, currentTime: currentTime, trackTime: trackTime)
-            
+            delegate?.audioPlayer(self, isPlaying: currentTime, trackTime: trackTime)
         } catch {
             delegate?.audioPlayer(self, error: error)
         }
@@ -249,12 +186,22 @@ private extension WWNormalizeAudioPlayer {
         audioEngine.prepare()
     }
     
+    /// 取得所有音訊的長度資訊
+    /// - Returns: [音訊的長度資訊]
+    func getTrackInfos() -> [TrackInformation] {
+        
+        audioURLs.compactMap { url in
+            let duration = try? trackTime(with: url)
+            return .init(url: url, duration: duration ?? -1)
+        }
+    }
+    
     /// [播放音樂](https://cloud.tencent.com/developer/ask/sof/111888173)
     /// - Parameters:
-    ///   - url: 音樂檔路徑
+    ///   - audioFile: 音樂檔物件
     ///   - targetDB: 正規化目標值
     ///   - callbackType: 回傳結束的時機
-    func playAudio(url: URL, targetDB: Float?, callbackType: AVAudioPlayerNodeCompletionCallbackType) async throws -> AVAudioPlayerNodeCompletionCallbackType {
+    func playAudio(audioFile: AVAudioFile, targetDB: Float?, callbackType: AVAudioPlayerNodeCompletionCallbackType) async throws -> AVAudioPlayerNodeCompletionCallbackType {
         
         guard let audioEngine,
               let playerNode
@@ -263,9 +210,6 @@ private extension WWNormalizeAudioPlayer {
         }
         
         if !audioEngine.isRunning { try audioEngine.start() }
-        
-        let audioFile = try AVAudioFile(forReading: url)
-        self.audioFile = audioFile
         
         if let targetDB {
             let gainDB = try equalizer.normalizationGain(of: audioFile, targetDB: targetDB)
@@ -291,7 +235,7 @@ private extension WWNormalizeAudioPlayer {
     ///   - `PlaybackError.playerNodeNotReady`：playerNode 尚未準備好
     ///   - 其他由上層呼叫流程拋出的錯誤
     func playAudioFile(audioFile: AVAudioFile, playerNode: AVAudioPlayerNode, callbackType: AVAudioPlayerNodeCompletionCallbackType = .dataPlayedBack) async throws -> AVAudioPlayerNodeCompletionCallbackType {
-        
+                
         return try await withCheckedContinuation { continuation in
             
             playerNode.scheduleFile(audioFile, at: nil, completionCallbackType: callbackType) { [weak self] type in
@@ -329,15 +273,18 @@ private extension WWNormalizeAudioPlayer {
         return max(0, min(seconds, currentTrackTotalTime()))
     }
     
+    /// 取得該音軌聲音的時間長度 (秒)
+    /// - Parameter url: URL
+    /// - Returns: TimeInterval
+    func trackTime(with url: URL) throws -> TimeInterval {
+        let file = try AVAudioFile(forReading: url)
+        return Double(file.length) / file.fileFormat.sampleRate
+    }
+    
     /// 取得目前曲目的總長度（秒）
     func currentTrackTotalTime() -> TimeInterval {
         guard let audioFile else { return 0 }
         return Double(audioFile.length) / audioFile.fileFormat.sampleRate
-    }
-    
-    /// 取得整個播放清單目前已播放的時間（秒）
-    func currentTime() throws -> TimeInterval {
-        return completedTracksDuration + (try currentTrackTime())
     }
     
     /// 開始計時

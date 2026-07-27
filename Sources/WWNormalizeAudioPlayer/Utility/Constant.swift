@@ -20,6 +20,7 @@ public extension WWNormalizeAudioPlayer {
     /// WWNormalizeAudioPlayer 的自訂錯誤類型
     enum CustomError: Error {
         case isEmptyFile                                            // 沒有任何檔案
+        case currentIndexUnavailable                                // 目前曲目索引不可用（例如尚未載入音軌清單或索引無效）
         case currentTimeUnavailable                                 // 當前時間不可用（例如計時器未啟動或音頻尚未播放）
         case playerNodeNotReady                                     // 播放器節點（playerNode）未就緒或不存在
         case audioSessionConfigurationFailed                        // 音頻會話（audioSession）配置失敗
@@ -68,6 +69,7 @@ extension WWNormalizeAudioPlayer.CustomError: LocalizedError {
         
         switch self {
         case .isEmptyFile: return "沒有任何聲音檔 (播放清單為空)"
+        case .currentIndexUnavailable: return "目前曲目索引不可用（例如尚未載入音軌清單或索引無效）"
         case .currentTimeUnavailable: return "當前時間不可用（例如計時器未啟動或音頻尚未播放）"
         case .playerNodeNotReady: return "播放器節點（playerNode）未就緒或不存在"
         case .audioSessionConfigurationFailed: return "音頻會話（audioSession）配置失敗"

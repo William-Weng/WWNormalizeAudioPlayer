@@ -1,4 +1,4 @@
-// swift-tools-version: 5.7
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "WWNormalizeAudioPlayer",
     platforms: [
-        .iOS(.v16)
+        .iOS(.v17)
     ],
     products: [
         .library(name: "WWNormalizeAudioPlayer", targets: ["WWNormalizeAudioPlayer"]),

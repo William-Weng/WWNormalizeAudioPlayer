@@ -1,14 +1,14 @@
+[English](./README.en.md) | [繁體中文](./README.md)
+
 # [WWNormalizeAudioPlayer](https://swiftpackageindex.com/William-Weng)
 
-[![Swift-5.7](https://img.shields.io/badge/Swift-5.7-orange.svg?style=flat)](https://developer.apple.com/swift/)
-[![iOS-16.0](https://img.shields.io/badge/iOS-16.0-pink.svg?style=flat)](https://developer.apple.com/swift/)
+[![Swift-5.10](https://img.shields.io/badge/Swift-5.10-orange.svg?style=flat)](https://developer.apple.com/swift/)
+[![iOS-17.0](https://img.shields.io/badge/iOS-17.0-pink.svg?style=flat)](https://developer.apple.com/swift/)
 ![TAG](https://img.shields.io/github/v/tag/William-Weng/WWNormalizeAudioPlayer)
 [![Swift Package Manager-SUCCESS](https://img.shields.io/badge/Swift_Package_Manager-SUCCESS-blue.svg?style=flat)](https://developer.apple.com/swift/)
 [![LICENSE](https://img.shields.io/badge/LICENSE-MIT-yellow.svg?style=flat)](https://developer.apple.com/swift/)
 
 A normalized audio player that supports **sequential playback** and **volume normalization**, helping multiple audio tracks stay at a consistent loudness level.
-
-[English](./README.en.md) | [繁體中文](./README.md)
 
 ---
 
@@ -36,7 +36,7 @@ It is useful when you want to play multiple audio tracks in sequence without sud
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.5"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.6.0"))
 ]
 ```
 
@@ -44,31 +44,45 @@ dependencies: [
 
 ## 🚀 Usage
 
-### Play audio files from a Bundle
-
 ```swift
+iimport UIKit
+import AVFoundation
 import WWNormalizeAudioPlayer
 
-let player = WWNormalizeAudioPlayer()
-let filenames = ["do-re-mi-re-do.m4a", "audio.mp3"]
-
-Task {
-    try audioPlayer.configure(delegate: self)
-    await audioPlayer.play(filenames: filenames)
+final class ViewController: UIViewController {
+    
+    private let audioPlayer = WWNormalizeAudioPlayer()
+    private let filenames = ["do-re-mi-re-do.m4a", "audio.mp3"]
+    private let index = 0
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        Task {
+            let audioURLs = filenames.map { URL.documentsDirectory.appendingPathComponent($0) }
+            audioPlayer.prepare(audioURLs: audioURLs, delegate: self)
+            try await audioPlayer.play(at: index)
+        }
+    }
 }
-```
 
-### Play from an array of URLs
-
-```swift
-let urls: [URL] = [
-    Bundle.main.url(forResource: "do-re-mi-re-do", withExtension: "m4a")!,
-    Bundle.main.url(forResource: "audio", withExtension: "mp3")!
-]
-
-Task {
-    try audioPlayer.configure(delegate: self)
-    await audioPlayer.play(filenames: filenames)
+extension ViewController: WWNormalizeAudioPlayer.Delegate {
+    
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, prepare tracks: [WWNormalizeAudioPlayer.TrackInformation]) {
+        tracks.forEach { print($0) }
+    }
+    
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, isPlaying currentTime: TimeInterval, trackTime: TimeInterval) {
+        print("[\(filenames[index])] = \(currentTime) of \(trackTime)")
+    }
+    
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, didFinished callbackType: AVAudioPlayerNodeCompletionCallbackType) {
+        print("finished = \(callbackType)")
+    }
+    
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, error: Error) {
+        print("error = \(error)")
+    }
 }
 ```
 
@@ -81,7 +95,6 @@ Task {
 | `equalizer` | Audio equalizer wrapper. |
 | `volume` | Adjusts the player volume, ranging from `0.0 ~ 1.0`. |
 | `audioNode` | The node representing the currently playing audio, suitable for installing a tap to capture real-time audio data. |
-| `isLoop` | Loop playback toggle. |
 
 ---
 
@@ -89,13 +102,11 @@ Task {
 
 | Method | Description |
 |---|---|
-| `configure(delegate:preferredFrameRateRange:options:)` | Configures the delegate and update rate, then initializes the audio engine. |
-| `play(at:filenames:targetDB:callbackType:loop:shuffle:)` | Play a list of audio files from a specific `Bundle`. |
-| `play(with:targetDB:callbackType:loop:shuffle:)` | Play an array of audio URLs with sequential playback and volume normalization. |
+| `prepare(audioURLs:delegate:preferredFrameRateRange:options:)` | Configures the delegate and update rate, then initializes the audio engine. |
+| `play(at:filenames:targetDB:)` | Play one of the tracks from the audio file list. |
 | `stop()` | Stop playback and reset the player state. |
 | `resume()` | Resume playback from the paused position. |
 | `pause()` | Pause playback while keeping the current position. |
-| `trackTime(with:)` | Get the duration of the audio track (in seconds). |
 
 ---
 
@@ -111,11 +122,13 @@ Task {
 
 ## 📝 Delegate
 
+## 📝 WWNormalizeAudioPlayer.Delegate
+
 | Method | Description |
 |---|---|
-| `audioPlayer(_:trackIndex:didStartTracks:totalDuration:)` | Called when the audio player starts playing a set of tracks. |
-| `audioPlayer(_:trackIndex:currentTime:tracTime:)` | Called when playback progress updates. |
-| `audioPlayer(_:didFinishTrackIndex:callbackType:)` | Called when a track finishes playing. |
+| `audioPlayer(_:prepare:)` | Notifies the delegate that the player is about to prepare the specified tracks. |
+| `audioPlayer(_:isPlaying:currentTime:tracTime:)` | Reports the current playback progress. |
+| `audioPlayer(_:didFinished:)` | Notifies the delegate that the current track has finished playing. |
 | `audioPlayer(_:error:)` | Called when an error occurs during playback. |
 
 ---
@@ -131,32 +144,31 @@ final class ViewController: UIViewController {
     
     private let audioPlayer = WWNormalizeAudioPlayer()
     private let filenames = ["do-re-mi-re-do.m4a", "audio.mp3"]
+    private let index = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         Task {
-            audioPlayer.configure(delegate: self)
-            await audioPlayer.play(filenames: filenames)
+            let audioURLs = filenames.map { URL.documentsDirectory.appendingPathComponent($0) }
+            audioPlayer.prepare(audioURLs: audioURLs, delegate: self)
+            try await audioPlayer.play(at: index)
         }
     }
 }
 
 extension ViewController: WWNormalizeAudioPlayer.Delegate {
     
-    func audioPlayer(_ player: WWNormalizeAudioPlayer, didStartTracks tracks: [URL], totalDuration: TimeInterval) {
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, prepare tracks: [WWNormalizeAudioPlayer.TrackInformation]) {
         tracks.forEach { print($0) }
-        print("total = \(totalDuration) sec")
     }
     
-    func audioPlayer(_ player: WWNormalizeAudioPlayer, trackIndex: Int, currentTime: TimeInterval, trackTime: TimeInterval) {
-        let audio = filenames[trackIndex]
-        print("time (\(audio)) = \(currentTime) of \(trackTime)")
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, isPlaying currentTime: TimeInterval, trackTime: TimeInterval) {
+        print("[\(filenames[index])] = \(currentTime) of \(trackTime)")
     }
     
-    func audioPlayer(_ player: WWNormalizeAudioPlayer, didFinishTrackIndex trackIndex: Int, callbackType: AVAudioPlayerNodeCompletionCallbackType) {
-        let audio = filenames[trackIndex]
-        print("finish = \(audio)")
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, didFinished callbackType: AVAudioPlayerNodeCompletionCallbackType) {
+        print("finished = \(callbackType)")
     }
     
     func audioPlayer(_ player: WWNormalizeAudioPlayer, error: Error) {

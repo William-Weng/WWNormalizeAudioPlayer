@@ -1,14 +1,14 @@
+[English](./README.en.md) | [繁體中文](./README.md)
+
 # [WWNormalizeAudioPlayer](https://swiftpackageindex.com/William-Weng)
 
-[![Swift-5.7](https://img.shields.io/badge/Swift-5.7-orange.svg?style=flat)](https://developer.apple.com/swift/)
-[![iOS-16.0](https://img.shields.io/badge/iOS-16.0-pink.svg?style=flat)](https://developer.apple.com/swift/)
+[![Swift-5.10](https://img.shields.io/badge/Swift-5.10-orange.svg?style=flat)](https://developer.apple.com/swift/)
+[![iOS-17.0](https://img.shields.io/badge/iOS-17.0-pink.svg?style=flat)](https://developer.apple.com/swift/)
 ![TAG](https://img.shields.io/github/v/tag/William-Weng/WWNormalizeAudioPlayer)
 [![Swift Package Manager-SUCCESS](https://img.shields.io/badge/Swift_Package_Manager-SUCCESS-blue.svg?style=flat)](https://developer.apple.com/swift/)
 [![LICENSE](https://img.shields.io/badge/LICENSE-MIT-yellow.svg?style=flat)](https://developer.apple.com/swift/)
 
 一個支援 **音量正規化** 與 **順序播放** 的音訊播放器，可讓多個音檔在播放時維持較一致的音量表現。
-
-[English](./README.en.md) | [繁體中文](./README.md)
 
 ---
 
@@ -36,7 +36,7 @@
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.5.5"))
+    .package(url: "https://github.com/William-Weng/WWNormalizeAudioPlayer.git", .upToNextMajor(from: "1.6.0"))
 ]
 ```
 
@@ -44,31 +44,45 @@ dependencies: [
 
 ## 🚀 使用方式
 
-### 直接播放 Bundle 內音檔
-
 ```swift
+import UIKit
+import AVFoundation
 import WWNormalizeAudioPlayer
 
-let player = WWNormalizeAudioPlayer()
-let filenames = ["do-re-mi-re-do.m4a", "audio.mp3"]
-
-Task {
-    try audioPlayer.configure(delegate: self)
-    await audioPlayer.play(filenames: filenames)
+final class ViewController: UIViewController {
+    
+    private let audioPlayer = WWNormalizeAudioPlayer()
+    private let filenames = ["do-re-mi-re-do.m4a", "audio.mp3"]
+    private let index = 0
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        
+        Task {
+            let audioURLs = filenames.map { URL.documentsDirectory.appendingPathComponent($0) }
+            audioPlayer.prepare(audioURLs: audioURLs, delegate: self)
+            try await audioPlayer.play(at: index)
+        }
+    }
 }
-```
 
-### 播放 URL 陣列
-
-```swift
-let urls: [URL] = [
-    Bundle.main.url(forResource: "do-re-mi-re-do", withExtension: "m4a")!,
-    Bundle.main.url(forResource: "audio", withExtension: "mp3")!
-]
-
-Task {
-    try audioPlayer.configure(delegate: self)
-    await audioPlayer.play(filenames: filenames)
+extension ViewController: WWNormalizeAudioPlayer.Delegate {
+    
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, prepare tracks: [WWNormalizeAudioPlayer.TrackInformation]) {
+        tracks.forEach { print($0) }
+    }
+    
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, isPlaying currentTime: TimeInterval, trackTime: TimeInterval) {
+        print("[\(filenames[index])] = \(currentTime) of \(trackTime)")
+    }
+    
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, didFinished callbackType: AVAudioPlayerNodeCompletionCallbackType) {
+        print("finished = \(callbackType)")
+    }
+    
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, error: Error) {
+        print("error = \(error)")
+    }
 }
 ```
 
@@ -81,7 +95,6 @@ Task {
 | `equalizer` | 音訊等化器封裝。 |
 | `volume` | 調整播放器音量，範圍為 `0.0 ~ 1.0`。 |
 | `audioNode` | 目前播放音訊所對應的節點，可用於安裝 tap 取得即時音訊資料。 |
-| `isLoop` | 循環播放開關。 |
 
 ---
 
@@ -89,13 +102,11 @@ Task {
 
 | 方法 | 說明 |
 |---|---|
-| `configure(delegate:preferredFrameRateRange:options:)` | 設定代理與更新頻率，並初始化音訊引擎。 |
-| `play(at:filenames:targetDB:callbackType:loop:shuffle:)` | 播放指定 `Bundle` 中的音訊檔案列表。 |
-| `play(with:targetDB:callbackType:loop:shuffle:)` | 播放音訊 URL 陣列，支援順序播放與音量正規化。 |
+| `prepare(audioURLs:delegate:preferredFrameRateRange:options:)` | 設定代理與更新頻率，並初始化音訊引擎。 |
+| `play(at:filenames:targetDB:)` | 播放音訊檔案列表其中一首。 |
 | `stop()` | 停止播放並重置狀態。 |
 | `resume()` | 從暫停狀態繼續播放。 |
 | `pause()` | 暫停播放並保留目前進度。 |
-| `trackTime(with:)` | 取得該音軌聲音的時間長度 (秒)。 |
 
 ---
 
@@ -109,14 +120,14 @@ Task {
 
 ---
 
-## 📝 Delegate
+## 📝 WWNormalizeAudioPlayer.Delegate
 
 | 方法 | 說明 |
 |---|---|
-| `audioPlayer(_:trackIndex:didStartTracks:totalDuration:)` | 當音訊播放器開始播放一組音軌時呼叫。 |
-| `audioPlayer(_:trackIndex:currentTime:tracTime:)` | 音訊播放進度更新時呼叫。 |
-| `audioPlayer(_:didFinishTrackIndex:callbackType:)` | 單一軌道播放完成時呼叫。 |
-| `audioPlayer(_:error:)` | 播放過程發生錯誤時呼叫。 |
+| `audioPlayer(_:prepare:)` | 告知代理：播放器即將開始準備指定的音軌。 |
+| `audioPlayer(_:isPlaying:currentTime:tracTime:)` | 回報目前播放進度。 |
+| `audioPlayer(_:didFinished:)` | 告知代理：目前音軌已播放完成。 |
+| `audioPlayer(_:error:)` | 當播放過程中發生錯誤時呼叫。 |
 
 ---
 
@@ -131,32 +142,31 @@ final class ViewController: UIViewController {
     
     private let audioPlayer = WWNormalizeAudioPlayer()
     private let filenames = ["do-re-mi-re-do.m4a", "audio.mp3"]
+    private let index = 0
     
     override func viewDidLoad() {
         super.viewDidLoad()
         
         Task {
-            audioPlayer.configure(delegate: self)
-            await audioPlayer.play(filenames: filenames)
+            let audioURLs = filenames.map { URL.documentsDirectory.appendingPathComponent($0) }
+            audioPlayer.prepare(audioURLs: audioURLs, delegate: self)
+            try await audioPlayer.play(at: index)
         }
     }
 }
 
 extension ViewController: WWNormalizeAudioPlayer.Delegate {
     
-    func audioPlayer(_ player: WWNormalizeAudioPlayer, didStartTracks tracks: [URL], totalDuration: TimeInterval) {
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, prepare tracks: [WWNormalizeAudioPlayer.TrackInformation]) {
         tracks.forEach { print($0) }
-        print("total = \(totalDuration) sec")
     }
     
-    func audioPlayer(_ player: WWNormalizeAudioPlayer, trackIndex: Int, currentTime: TimeInterval, trackTime: TimeInterval) {
-        let audio = filenames[trackIndex]
-        print("time (\(audio)) = \(currentTime) of \(trackTime)")
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, isPlaying currentTime: TimeInterval, trackTime: TimeInterval) {
+        print("[\(filenames[index])] = \(currentTime) of \(trackTime)")
     }
     
-    func audioPlayer(_ player: WWNormalizeAudioPlayer, didFinishTrackIndex trackIndex: Int, callbackType: AVAudioPlayerNodeCompletionCallbackType) {
-        let audio = filenames[trackIndex]
-        print("finish = \(audio)")
+    func audioPlayer(_ player: WWNormalizeAudioPlayer, didFinished callbackType: AVAudioPlayerNodeCompletionCallbackType) {
+        print("finished = \(callbackType)")
     }
     
     func audioPlayer(_ player: WWNormalizeAudioPlayer, error: Error) {

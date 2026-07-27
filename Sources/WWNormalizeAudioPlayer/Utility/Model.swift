@@ -2,7 +2,7 @@
 //  Model.swift
 //  WWNormalizeAudioPlayer
 //
-//  Created by iOS on 2026/6/2.
+//  Created by William.Weng on 2026/6/2.
 //
 
 import Foundation
@@ -31,5 +31,13 @@ public extension WWNormalizeAudioPlayer {
             self.upperFrequency = upperFrequency
             self.values = values
         }
+    }
+    
+    /// 音軌資訊 (位置 / 長度)
+    struct TrackInformation: Identifiable {
+        
+        public var id: UUID = UUID()        // 這筆音軌資料的唯一識別值
+        public let url: URL                 // 音軌對應的檔案位置
+        public let duration: TimeInterval   // 音軌總長度，單位為秒
     }
 }
